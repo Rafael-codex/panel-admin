@@ -1,0 +1,2786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="icon" type="image/png" href="/public/favicon.jpg">
+<link rel="shortcut icon" type="image/png" href="/public/favicon.jpg">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Panel Admin · Rafael-Codex 🐧</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0612">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="dns-prefetch" href="https://www.gstatic.com">
+<link rel="dns-prefetch" href="https://firestore.googleapis.com">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800;14..32,900&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   RESET
+========================================================= */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    color: #eef5ff;
+    padding: 0.8rem 1rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    background-color: #06040d;
+    background-image:
+        radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.28), transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(59, 130, 246, 0.22), transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(217, 70, 239, 0.18), transparent 55%),
+        radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.18), transparent 50%),
+        linear-gradient(180deg, #070512 0%, #06040d 100%);
+    background-attachment: scroll;
+    background-repeat: no-repeat;
+    background-size: cover;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.container { max-width: 1400px; margin: 0 auto; }
+
+/* =========================================================
+   BOTÓN HAMBURGUESA
+========================================================= */
+.menu-toggle-btn {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 4000;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    background: linear-gradient(135deg, rgba(30, 15, 55, 0.92), rgba(10, 8, 25, 0.92));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #e9d5ff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0 6px 22px rgba(0,0,0,0.55),
+        0 0 18px rgba(168,85,247,0.35),
+        inset 0 0 12px rgba(168,85,247,0.08);
+    transition: all 0.3s ease;
+}
+.menu-toggle-btn:hover {
+    transform: scale(1.06);
+    border-color: #c084fc;
+    box-shadow:
+        0 8px 26px rgba(0,0,0,0.6),
+        0 0 26px rgba(168,85,247,0.7);
+    color: #fff;
+}
+.menu-toggle-btn:active { transform: scale(0.96); }
+
+/* =========================================================
+   OVERLAY
+========================================================= */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 4100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+.sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+.sidebar-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    max-width: 85vw;
+    height: 100vh;
+    z-index: 4200;
+    transform: translateX(-105%);
+    transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    background: linear-gradient(160deg, rgba(20, 12, 40, 0.98), rgba(8, 5, 18, 0.99));
+    border-right: 1px solid rgba(168, 85, 247, 0.35);
+    box-shadow:
+        8px 0 40px rgba(0,0,0,0.7),
+        inset -1px 0 0 rgba(192, 132, 252, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 1rem;
+}
+.sidebar-panel.open { transform: translateX(0); }
+
+.sidebar-panel::-webkit-scrollbar { width: 4px; }
+.sidebar-panel::-webkit-scrollbar-track { background: transparent; }
+.sidebar-panel::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #a855f7, #6366f1);
+    border-radius: 8px;
+}
+
+.sidebar-logo {
+    text-align: center;
+    padding: 1.6rem 1rem 1.1rem;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.18);
+}
+.sidebar-logo .sidebar-logo-img {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto 0.5rem;
+    border: 2px solid rgba(168, 85, 247, 0.6);
+    box-shadow:
+        0 0 14px rgba(96, 165, 250, 0.85),
+        0 0 26px rgba(168, 85, 247, 0.5);
+}
+.sidebar-logo .brand {
+    font-family: 'Orbitron', monospace;
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 1.2px;
+    background: linear-gradient(135deg, #ffffff, #c084fc 50%, #60a5fa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 22px rgba(96, 165, 250, 0.55);
+}
+.sidebar-logo .tagline {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.5rem;
+    letter-spacing: 3px;
+    color: #7dd3fc;
+    margin-top: 0.35rem;
+    text-shadow: 0 0 12px rgba(125, 211, 252, 0.7);
+    opacity: 0.9;
+}
+
+.sidebar-menu { list-style: none; padding: 0.8rem 0.7rem; flex: 1; }
+.sidebar-menu li { margin-bottom: 0.28rem; }
+
+.menu-item, .submenu-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.72rem 0.9rem;
+    border-radius: 13px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #ddd6fe;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.83rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    text-align: left;
+    position: relative;
+}
+.menu-item:hover, .submenu-toggle:hover {
+    background: rgba(168, 85, 247, 0.14);
+    border-color: rgba(168, 85, 247, 0.35);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.25);
+    transform: translateX(3px);
+}
+.menu-item i:first-child, .submenu-toggle i:first-child {
+    font-size: 0.95rem;
+    width: 20px;
+    text-align: center;
+    color: #c084fc;
+    flex-shrink: 0;
+}
+
+.submenu { list-style: none; max-height: 0; overflow: hidden; transition: max-height 0.4s ease; padding-left: 0.4rem; }
+.submenu.expanded { max-height: 500px; }
+.submenu li { margin-bottom: 0.15rem; }
+.submenu .submenu-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.9rem 0.5rem 2.2rem;
+    border-radius: 10px;
+    color: #c4b5fd;
+    font-size: 0.76rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    position: relative;
+    border: 1px solid transparent;
+}
+.submenu .submenu-link::before {
+    content: "├─";
+    position: absolute;
+    left: 0.75rem;
+    color: rgba(168, 85, 247, 0.5);
+    font-size: 0.7rem;
+}
+.submenu .submenu-link:hover {
+    background: rgba(96, 165, 250, 0.12);
+    color: #fff;
+    border-color: rgba(96, 165, 250, 0.3);
+    transform: translateX(4px);
+}
+
+.sidebar-divider {
+    height: 1px;
+    margin: 0.6rem 1rem;
+    background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.45), transparent);
+}
+
+.sidebar-mode { padding: 0.5rem 0.9rem 0.3rem; }
+.sidebar-mode .menu-item { justify-content: space-between; }
+.sidebar-mode .toggle-dot {
+    width: 38px;
+    height: 20px;
+    border-radius: 12px;
+    background: rgba(80, 60, 120, 0.6);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    position: relative;
+    transition: background 0.3s ease, border-color 0.3s ease;
+    flex-shrink: 0;
+}
+.sidebar-mode .toggle-dot::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #facc15, #f59e0b);
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+body.light-mode .sidebar-mode .toggle-dot {
+    background: rgba(139, 92, 246, 0.35);
+    border-color: rgba(139, 92, 246, 0.6);
+}
+body.light-mode .sidebar-mode .toggle-dot::after {
+    transform: translateX(18px);
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+}
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+.top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(15, 10, 30, 0.55);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 40px;
+    padding: 0.55rem 1.5rem;
+    margin-bottom: 0.8rem;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    box-shadow:
+        0 8px 28px rgba(0,0,0,0.5),
+        inset 0 0 20px rgba(168, 85, 247, 0.05);
+    margin-top: -5px;
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+.logo-area { display:flex; align-items:center; gap:10px; flex-wrap:nowrap; padding-left: 48px; }
+
+.logo {
+    font-family:'Orbitron', monospace;
+    font-weight:800;
+    font-size:1.15rem;
+    background: linear-gradient(135deg,#ffffff,#c084fc 45%,#60a5fa);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    letter-spacing:0.5px;
+    white-space:nowrap;
+    text-shadow: 0 0 30px rgba(168,85,247,0.4);
+}
+
+.badge {
+    background: linear-gradient(135deg,#a855f7,#6366f1);
+    padding:0.25rem 0.8rem;
+    border-radius:30px;
+    font-size:0.6rem;
+    font-weight:800;
+    letter-spacing:0.6px;
+    white-space:nowrap;
+    color:#fff;
+    box-shadow:0 0 12px rgba(168,85,247,0.55);
+    border: 1px solid rgba(192,132,252,0.4);
+}
+
+.social-links {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.social-btn {
+    display:flex;
+    align-items:center;
+    gap:5px;
+    padding:0.45rem 0.85rem;
+    border-radius:40px;
+    text-decoration:none;
+    color:white;
+    font-size:0.72rem;
+    font-weight:700;
+    transition:0.25s;
+    box-shadow:0 0 10px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+}
+.social-btn i { font-size:0.85rem; }
+
+.social-btn.whatsapp{ background:linear-gradient(135deg,#25D366,#128C7E); }
+.social-btn:hover {
+    transform:translateY(-2px) scale(1.03);
+    box-shadow:0 0 18px rgba(168,85,247,0.55);
+}
+
+.mode-toggle-btn {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:auto;
+    height:36px;
+    padding:0 11px;
+    gap:5px;
+    border-radius:18px;
+    background: linear-gradient(135deg, rgba(250,204,21,0.9), rgba(245,158,11,0.9));
+    color:#1a0f00;
+    border: 1px solid rgba(255,255,255,0.2);
+    cursor:pointer;
+    transition:0.3s;
+    font-weight: 800;
+    font-size: 0.65rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 14px rgba(250,204,21,0.4);
+}
+.mode-toggle-btn i { font-size:0.9rem; }
+.mode-toggle-btn:hover {
+    transform:scale(1.06);
+    box-shadow: 0 0 22px rgba(250,204,21,0.7);
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+.hero {
+    position: relative;
+    background: linear-gradient(135deg, rgba(30, 15, 55, 0.7), rgba(10, 8, 25, 0.85));
+    border-radius: 1.8rem;
+    padding: 2rem 2rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    box-shadow:
+        0 20px 50px rgba(0,0,0,0.6),
+        inset 0 0 40px rgba(168, 85, 247, 0.08);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    overflow: hidden;
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+.hero::before {
+    content: "";
+    position: absolute;
+    top: -60%; right: -10%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(168,85,247,0.35), transparent 60%);
+    filter: blur(40px);
+    pointer-events: none;
+}
+.hero::after {
+    content: "";
+    position: absolute;
+    bottom: -50%; left: -10%;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(59,130,246,0.28), transparent 60%);
+    filter: blur(50px);
+    pointer-events: none;
+}
+.hero > * { position: relative; z-index: 1; }
+
+.hero h1 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 2rem;
+    color: #ffffff;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    word-break: break-word;
+    text-shadow:
+        0 0 30px rgba(168,85,247,0.45),
+        0 0 60px rgba(99,102,241,0.25);
+}
+.hero h1 .hero-accent {
+    background: linear-gradient(135deg,#c084fc,#60a5fa,#f0abfc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.hero p {
+    font-size: 0.9rem;
+    margin-top: 0.6rem;
+    color: #cbd5e1;
+    letter-spacing: 0.3px;
+    max-width: 640px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   DASHBOARD GRID
+========================================================= */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+@media (max-width: 880px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   CARDS
+========================================================= */
+.upload-card, .preview-card {
+    background: rgba(15, 10, 30, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 1.6rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    box-shadow:
+        0 12px 40px rgba(0,0,0,0.55),
+        inset 0 0 30px rgba(168,85,247,0.04);
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+.upload-card h3, .preview-card h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.05rem;
+    color: #fff;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    text-shadow: 0 0 14px rgba(168,85,247,0.35);
+}
+.upload-card h3 i, .preview-card h3 i {
+    color: #c084fc;
+    font-size: 1rem;
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+.form-group { margin-bottom: 1rem; }
+
+label {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.4rem;
+    color: #ddd6fe;
+    font-size: 0.78rem;
+    letter-spacing: 0.3px;
+}
+
+input, textarea, select {
+    width: 100%;
+    background: rgba(10, 8, 25, 0.7);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.25s ease;
+}
+input:focus, textarea:focus, select:focus {
+    border-color: #c084fc;
+    box-shadow: 0 0 16px rgba(168,85,247,0.45);
+    background: rgba(20, 15, 45, 0.9);
+}
+input::placeholder, textarea::placeholder {
+    color: rgba(220, 200, 255, 0.35);
+}
+select option {
+    background: #150a2e;
+    color: #fff;
+}
+small {
+    display: block;
+    font-size: 0.68rem;
+    color: #a5b4fc;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.file-area {
+    border: 2px dashed rgba(168, 85, 247, 0.4);
+    border-radius: 16px;
+    padding: 1.2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.25s;
+    background: rgba(168, 85, 247, 0.04);
+}
+.file-area:hover {
+    border-color: #c084fc;
+    background: rgba(168, 85, 247, 0.1);
+}
+.file-area i {
+    color: #c084fc;
+    margin-bottom: 6px;
+    display: block;
+}
+.file-area p {
+    font-size: 0.75rem;
+    color: #a5b4fc;
+    margin-bottom: 8px;
+}
+.file-area .btn-sm { margin-top: 4px; }
+.file-area span {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 8px;
+    color: #e9d5ff;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.btn-primary-neon {
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 40px;
+    font-weight: 800;
+    color: white;
+    cursor: pointer;
+    transition: 0.25s;
+    box-shadow: 0 0 18px rgba(168,85,247,0.5);
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.btn-primary-neon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 28px rgba(168,85,247,0.85);
+}
+.btn-primary-neon:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   FILES GRID
+========================================================= */
+.files-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 1000px;
+    overflow-y: auto;
+    padding-right: 0.4rem;
+}
+
+.file-card {
+    background: linear-gradient(135deg,
+        rgba(168, 85, 247, 0.08) 0%,
+        rgba(99, 102, 241, 0.06) 50%,
+        rgba(15, 10, 30, 0.7) 100%);
+    border-radius: 1.2rem;
+    padding: 1.1rem;
+    transition: 0.3s;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-left: 4px solid #c084fc;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+.file-card:hover {
+    box-shadow: 0 10px 32px rgba(0,0,0,0.6), 0 0 20px rgba(168,85,247,0.35);
+    transform: translateY(-2px);
+}
+.file-card.premium-card {
+    border-left-color: #facc15;
+    background: linear-gradient(135deg,
+        rgba(250, 204, 21, 0.1) 0%,
+        rgba(168, 85, 247, 0.08) 50%,
+        rgba(15, 10, 30, 0.7) 100%);
+    border-color: rgba(250, 204, 21, 0.3);
+}
+
+.file-card h4 {
+    font-size: 1rem;
+    font-weight: 800;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(168,85,247,0.3);
+}
+
+.price-tag {
+    background: rgba(30, 20, 55, 0.8);
+    padding: 0.2rem 0.8rem;
+    border-radius: 25px;
+    font-weight: 800;
+    font-size: 0.62rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    letter-spacing: 0.4px;
+}
+.price-tag.free {
+    background: rgba(34, 197, 94, 0.2);
+    color: #bbf7d0;
+    border: 1px solid rgba(74,222,128,0.5);
+}
+.price-tag.premium {
+    background: rgba(250, 204, 21, 0.18);
+    color: #fef08a;
+    border: 1px solid rgba(250,204,21,0.55);
+    box-shadow: 0 0 10px rgba(250,204,21,0.35);
+}
+
+.meta-info {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.68rem;
+    color: #a5b4fc;
+    margin: 0.5rem 0;
+    flex-wrap: wrap;
+}
+
+.preview-img-card {
+    width: 100%;
+    max-height: 130px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin: 8px 0;
+    display: block;
+}
+
+.actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    flex-wrap: wrap;
+}
+
+/* =========================================================
+   BOTONES PEQUEÑOS
+========================================================= */
+.btn-sm {
+    background: rgba(30, 20, 55, 0.7);
+    border: 1px solid rgba(168,85,247,0.4);
+    padding: 0.35rem 0.85rem;
+    border-radius: 25px;
+    color: #e9d5ff;
+    cursor: pointer;
+    font-size: 0.68rem;
+    font-weight: 700;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.3px;
+    font-family: 'Inter', sans-serif;
+}
+.btn-sm:hover {
+    transform: translateY(-1px);
+    border-color: #c084fc;
+    box-shadow: 0 0 14px rgba(168,85,247,0.55);
+    color: #fff;
+}
+.btn-sm.view-btn {
+    background: linear-gradient(135deg, rgba(96,165,250,0.25), rgba(99,102,241,0.2));
+    border-color: rgba(96,165,250,0.55);
+    color: #dbeafe;
+}
+.btn-sm.share-btn {
+    background: linear-gradient(135deg, rgba(37,211,102,0.2), rgba(16,185,129,0.18));
+    border-color: rgba(37,211,102,0.55);
+    color: #d1fae5;
+}
+.btn-sm.buy-btn {
+    background: linear-gradient(135deg, rgba(250,204,21,0.22), rgba(245,158,11,0.18));
+    border-color: rgba(250,204,21,0.6);
+    color: #fef3c7;
+}
+.btn-sm.download-btn {
+    background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(99,102,241,0.2));
+    border-color: rgba(192,132,252,0.6);
+    color: #ede9fe;
+}
+.btn-sm.edit-btn {
+    background: linear-gradient(135deg, rgba(45,108,223,0.25), rgba(74,140,255,0.2));
+    border-color: rgba(96,165,250,0.6);
+    color: #dbeafe;
+}
+.btn-sm.delete-btn {
+    background: linear-gradient(135deg, rgba(220,38,38,0.22), rgba(185,28,28,0.18));
+    border-color: rgba(248,113,113,0.6);
+    color: #fecaca;
+}
+.btn-sm.delete-btn:hover {
+    border-color: #f87171;
+    box-shadow: 0 0 14px rgba(248,113,113,0.65);
+}
+
+/* =========================================================
+   FILTROS
+========================================================= */
+.btn-group { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+.filter-btn {
+    background: rgba(30, 20, 55, 0.6);
+    padding: 0.55rem 1.3rem;
+    border-radius: 40px;
+    font-weight: 700;
+    color: #e9d5ff;
+    cursor: pointer;
+    transition: 0.25s;
+    font-size: 0.8rem;
+    border: 1px solid rgba(168,85,247,0.35);
+    font-family: 'Inter', sans-serif;
+}
+.filter-btn.free {
+    background: linear-gradient(135deg, rgba(74,222,128,0.18), rgba(34,197,94,0.1));
+    border: 1px solid rgba(74,222,128,0.55);
+    color: #bbf7d0;
+}
+.filter-btn.premium {
+    background: linear-gradient(135deg, rgba(250,204,21,0.2), rgba(245,158,11,0.1));
+    border: 1px solid rgba(250,204,21,0.6);
+    color: #fef08a;
+}
+.filter-btn.active {
+    background: linear-gradient(135deg,#a855f7,#6366f1);
+    color: white;
+    border: 1px solid #c084fc;
+    box-shadow:0 0 18px rgba(168,85,247,0.7);
+    transform: scale(1.02);
+}
+
+/* =========================================================
+   STATUS + INDICADOR
+========================================================= */
+.server-status {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.5);
+    border-radius: 15px;
+    padding: 4px 12px;
+    font-size: 0.65rem;
+    color: #bbf7d0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+}
+.filter-indicator {
+    margin-left: 0.6rem;
+    font-size: 0.7rem;
+    color: #c084fc;
+    font-weight: 700;
+}
+
+/* =========================================================
+   LOADING / EMPTY
+========================================================= */
+.loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #c084fc;
+    font-size: 0.9rem;
+}
+.loading i { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+
+.empty-catalog {
+    text-align: center;
+    padding: 40px 20px;
+    color: #c4b5fd;
+    font-size: 0.9rem;
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0b0718; border-radius: 6px; }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg,#a855f7,#6366f1);
+    border-radius: 8px;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.72rem;
+    opacity: 0.8;
+    color: #c4b5fd;
+    line-height: 1.6;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 10, 40, 0.96);
+    color: white;
+    padding: 0.8rem 1.6rem;
+    border-radius: 40px;
+    font-weight: 700;
+    z-index: 99999;
+    border: 1px solid rgba(192,132,252,0.7);
+    box-shadow: 0 0 25px rgba(168,85,247,0.55);
+    animation: slideUpToast 0.3s ease;
+    font-size: 0.85rem;
+    backdrop-filter: blur(10px);
+    max-width: 90vw;
+    text-align: center;
+}
+@keyframes slideUpToast {
+    from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+/* =========================================================
+   MODALES
+========================================================= */
+.hidden { display: none !important; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.youtube-modal, .premium-access-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    animation: fadeIn 0.2s ease;
+    padding: 15px;
+}
+.youtube-card {
+    background: #0a0618;
+    border-radius: 1.5rem;
+    padding: 0.5rem;
+    max-width: 90vw;
+    max-height: 90vh;
+    border: 2px solid rgba(192,132,252,0.6);
+    box-shadow: 0 0 40px rgba(168,85,247,0.6);
+    overflow: hidden;
+    position: relative;
+}
+.youtube-card iframe {
+    width: 80vw;
+    height: 45vw;
+    max-width: 1000px;
+    max-height: 562px;
+    border-radius: 1rem;
+    border: none;
+    display: block;
+}
+.close-yt-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg,#dc2626,#ef4444);
+    border: none;
+    color: white;
+    font-size: 1.3rem;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.close-yt-btn:hover { transform: scale(1.1); }
+.embed-note {
+    font-size: 0.7rem;
+    text-align: center;
+    margin-top: 8px;
+    color: #a5b4fc;
+    padding: 0 10px 6px;
+}
+
+/* PREMIUM MODAL */
+.premium-card-modal {
+    background: linear-gradient(145deg, #150a2e, #08040f);
+    border-radius: 1.8rem;
+    padding: 1.8rem;
+    text-align: center;
+    border: 2px solid rgba(250,204,21,0.55);
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 0 50px rgba(250, 204, 21, 0.35);
+}
+.premium-card-modal h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem;
+    color: #facc15;
+    text-shadow: 0 0 14px rgba(250,204,21,0.7);
+    margin-bottom: 0.8rem;
+}
+.premium-card-modal p {
+    margin: 0.8rem 0;
+    line-height: 1.5;
+    color: #eef5ff;
+    font-size: 0.88rem;
+}
+.modal-buttons {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    margin-top: 1.2rem;
+    flex-wrap: wrap;
+}
+.btn-whatsapp-modal {
+    background: #25D366;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 40px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    transition: 0.2s;
+    box-shadow: 0 0 18px rgba(37,211,102,0.5);
+    font-family: 'Inter', sans-serif;
+}
+.btn-whatsapp-modal:hover { background: #128C7E; transform: scale(1.03); }
+.btn-cancel-modal {
+    background: rgba(80, 60, 120, 0.7);
+    border: 1px solid rgba(168,85,247,0.4);
+    padding: 0.7rem 1.5rem;
+    border-radius: 40px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+}
+.btn-cancel-modal:hover { background: rgba(120, 80, 200, 0.8); }
+
+/* EDIT MODAL */
+.edit-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3200;
+    padding: 15px;
+    animation: fadeIn 0.2s ease;
+}
+.edit-modal-card {
+    background: linear-gradient(145deg, #150a2e, #08040f);
+    border-radius: 1.8rem;
+    padding: 1.8rem;
+    max-width: 650px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    border: 2px solid rgba(192,132,252,0.6);
+    box-shadow: 0 0 40px rgba(168,85,247,0.4);
+}
+.edit-modal-card h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    margin-bottom: 1.2rem;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 0 14px rgba(168,85,247,0.5);
+}
+.edit-modal-card .form-group { margin-bottom: 1rem; }
+.edit-buttons {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    margin-top: 1.2rem;
+    flex-wrap: wrap;
+}
+.btn-edit-save {
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    border: none;
+    padding: 0.7rem 1.8rem;
+    border-radius: 40px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    box-shadow: 0 0 18px rgba(168,85,247,0.5);
+    font-family: 'Inter', sans-serif;
+}
+.btn-edit-save:hover { transform: translateY(-2px); }
+.btn-edit-save:disabled { opacity: 0.7; cursor: not-allowed; }
+.btn-edit-cancel {
+    background: rgba(80, 60, 120, 0.7);
+    border: 1px solid rgba(168,85,247,0.4);
+    padding: 0.7rem 1.8rem;
+    border-radius: 40px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+}
+.btn-edit-cancel:hover { background: rgba(120, 80, 200, 0.8); }
+.current-file-info {
+    background: rgba(168,85,247,0.12);
+    padding: 0.6rem 0.9rem;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    margin-top: 0.5rem;
+    color: #ddd6fe;
+    border: 1px solid rgba(168,85,247,0.3);
+}
+.image-preview-edit {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 10px;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+/* =========================================================
+   LINK COMPRA AUTOMÁTICA
+========================================================= */
+.link-compra-group {
+    background: linear-gradient(135deg, rgba(250,204,21,0.08), rgba(168,85,247,0.06));
+    border: 1px solid rgba(250,204,21,0.4);
+    border-radius: 14px;
+    padding: 0.9rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+.link-compra-group label {
+    color: #fde047;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 800;
+    font-size: 0.78rem;
+}
+.link-compra-group label i {
+    color: #facc15;
+    font-size: 0.85rem;
+}
+.link-compra-group input {
+    background: rgba(10, 8, 25, 0.8);
+    border-color: rgba(250,204,21,0.4);
+}
+.link-compra-group input:focus {
+    border-color: #facc15;
+    box-shadow: 0 0 16px rgba(250,204,21,0.5);
+}
+.link-compra-group small {
+    color: #fde047;
+    opacity: 0.85;
+}
+.link-preview-btn {
+    margin-top: 6px;
+    background: linear-gradient(135deg, rgba(250,204,21,0.2), rgba(245,158,11,0.15));
+    border: 1px solid rgba(250,204,21,0.5);
+    color: #fef3c7;
+    padding: 0.35rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.25s;
+    font-family: 'Inter', sans-serif;
+}
+.link-preview-btn:hover {
+    background: linear-gradient(135deg, rgba(250,204,21,0.35), rgba(245,158,11,0.25));
+    box-shadow: 0 0 16px rgba(250,204,21,0.6);
+    color: #fff;
+}
+.link-status-ok {
+    color: #86efac;
+    font-size: 0.68rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+}
+.link-status-error {
+    color: #fca5a5;
+    font-size: 0.68rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+}
+
+body.light-mode .link-compra-group {
+    background: linear-gradient(135deg, rgba(254,249,195,0.8), rgba(253,244,255,0.8));
+    border-color: rgba(250,204,21,0.6);
+}
+body.light-mode .link-compra-group label { color: #78350f; }
+body.light-mode .link-compra-group small { color: #78350f; }
+body.light-mode .link-compra-group input {
+    background: #fff;
+    color: #3b0764;
+    border-color: rgba(250,204,21,0.6);
+}
+
+/* =========================================================
+   MODO CLARO
+========================================================= */
+body.light-mode {
+    background-color: #fff7ed;
+    background-image:
+        radial-gradient(circle at 8% 8%, rgba(217, 70, 239, 0.32), transparent 38%),
+        radial-gradient(circle at 92% 8%, rgba(249, 115, 22, 0.28), transparent 38%),
+        radial-gradient(circle at 15% 55%, rgba(20, 184, 166, 0.24), transparent 42%),
+        radial-gradient(circle at 85% 55%, rgba(234, 88, 12, 0.20), transparent 40%),
+        radial-gradient(circle at 50% 100%, rgba(124, 58, 237, 0.28), transparent 48%),
+        linear-gradient(135deg, #fff7ed 0%, #fdf4ff 35%, #fff1f2 65%, #fefce8 100%);
+    color: #3b0764;
+}
+body.light-mode .top-bar {
+    background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(250,245,255,0.97), rgba(255,247,237,0.97));
+    border-color: rgba(168, 85, 247, 0.42);
+    box-shadow: 0 6px 30px rgba(124, 58, 237, 0.16), 0 2px 12px rgba(249, 115, 22, 0.10);
+}
+body.light-mode .logo {
+    background: linear-gradient(135deg, #7c3aed, #c026d3, #db2777, #ea580c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+}
+body.light-mode .badge {
+    background: linear-gradient(135deg, #7c3aed, #c026d3, #db2777);
+    color: #ffffff;
+    box-shadow: 0 5px 20px rgba(124, 58, 237, 0.38);
+}
+body.light-mode .hero {
+    background: linear-gradient(135deg, #ffffff 0%, #fdf4ff 40%, #fff1f2 70%, #fff7ed 100%);
+    border-color: rgba(168, 85, 247, 0.38);
+    box-shadow: 0 14px 45px rgba(124, 58, 237, 0.16), 0 5px 20px rgba(249, 115, 22, 0.10);
+}
+body.light-mode .hero h1 { color: #3b0764; text-shadow: none; }
+body.light-mode .hero h1 .hero-accent {
+    background: linear-gradient(135deg, #7c3aed, #c026d3, #db2777, #ea580c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+body.light-mode .hero p { color: #581c87; }
+
+body.light-mode .upload-card,
+body.light-mode .preview-card,
+body.light-mode .file-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(253,244,255,0.96), rgba(255,247,237,0.96));
+    border-color: rgba(168, 85, 247, 0.32);
+    box-shadow: 0 10px 38px rgba(124, 58, 237, 0.13), 0 4px 16px rgba(249, 115, 22, 0.07);
+}
+body.light-mode .file-card {
+    border-left-color: #a855f7;
+    background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(243,232,255,0.97), rgba(255,247,237,0.97));
+}
+body.light-mode .file-card.premium-card {
+    border-left-color: #f59e0b;
+    border-color: rgba(250, 204, 21, 0.6);
+    background: linear-gradient(135deg, rgba(254,249,195,0.9), rgba(255,237,213,0.9), rgba(253,244,255,0.95));
+}
+body.light-mode .file-card h4 { color: #3b0764; text-shadow: none; }
+body.light-mode .meta-info { color: #6b21a8; }
+body.light-mode .file-card p { color: #4c1d95; }
+body.light-mode label { color: #581c87; }
+body.light-mode small { color: #6b21a8; }
+
+body.light-mode input,
+body.light-mode textarea,
+body.light-mode select {
+    background: rgba(255,255,255,0.9);
+    color: #3b0764;
+    border-color: rgba(168, 85, 247, 0.35);
+}
+body.light-mode input:focus,
+body.light-mode textarea:focus,
+body.light-mode select:focus {
+    border-color: #a855f7;
+    box-shadow: 0 0 16px rgba(168,85,247,0.35);
+    background: #fff;
+}
+body.light-mode input::placeholder,
+body.light-mode textarea::placeholder { color: #a78bfa; }
+body.light-mode select option { background: #fff; color: #3b0764; }
+
+body.light-mode .file-area {
+    background: rgba(168, 85, 247, 0.06);
+    border-color: rgba(168, 85, 247, 0.4);
+}
+body.light-mode .file-area:hover {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: #a855f7;
+}
+body.light-mode .file-area p,
+body.light-mode .file-area span { color: #581c87; }
+
+body.light-mode .btn-sm {
+    background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(243,232,255,0.98));
+    color: #581c87;
+    border-color: rgba(168, 85, 247, 0.5);
+}
+body.light-mode .btn-sm:hover {
+    background: linear-gradient(135deg, #ede9fe, #fae8ff);
+    color: #7c3aed;
+    border-color: #a855f7;
+}
+body.light-mode .btn-sm.delete-btn {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+    border-color: #f87171;
+}
+
+body.light-mode .filter-btn {
+    background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(243,232,255,0.98));
+    color: #581c87;
+    border-color: rgba(168, 85, 247, 0.5);
+}
+body.light-mode .filter-btn.free {
+    background: linear-gradient(135deg, rgba(220,252,231,0.98), rgba(187,247,208,0.95));
+    color: #14532d;
+    border-color: rgba(34,197,94,0.7);
+}
+body.light-mode .filter-btn.premium {
+    background: linear-gradient(135deg, rgba(254,249,195,0.98), rgba(253,230,138,0.95));
+    color: #78350f;
+    border-color: rgba(250,204,21,0.8);
+}
+
+body.light-mode .sidebar-panel {
+    background: linear-gradient(160deg, rgba(255,255,255,0.99), rgba(243,232,255,0.99), rgba(255,247,237,0.99));
+    border-right-color: rgba(168, 85, 247, 0.45);
+    box-shadow: 8px 0 54px rgba(124, 58, 237, 0.25);
+}
+body.light-mode .sidebar-logo { border-bottom-color: rgba(168,85,247,0.35); }
+body.light-mode .sidebar-logo .brand {
+    background: linear-gradient(135deg, #7c3aed, #c026d3, #db2777, #ea580c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+}
+body.light-mode .sidebar-logo .tagline { color: #a855f7; text-shadow: none; }
+body.light-mode .menu-item, body.light-mode .submenu-toggle { color: #581c87; }
+body.light-mode .menu-item i:first-child, body.light-mode .submenu-toggle i:first-child { color: #a855f7; }
+body.light-mode .menu-item:hover, body.light-mode .submenu-toggle:hover {
+    background: linear-gradient(135deg, rgba(237,233,254,0.8), rgba(250,232,255,0.8));
+    border-color: rgba(168,85,247,0.5);
+    color: #7c3aed;
+}
+body.light-mode .submenu .submenu-link { color: #6b21a8; }
+body.light-mode .submenu .submenu-link:hover {
+    background: linear-gradient(135deg, rgba(237,233,254,0.8), rgba(250,232,255,0.8));
+    color: #7c3aed;
+}
+body.light-mode .menu-toggle-btn {
+    background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(243,232,255,0.98));
+    border-color: rgba(168,85,247,0.6);
+    color: #7c3aed;
+}
+body.light-mode .mode-toggle-btn {
+    background: linear-gradient(135deg, #ffffff, #fef3c7, #fde68a);
+    color: #78350f;
+    border-color: rgba(250,204,21,0.6);
+}
+body.light-mode .server-status {
+    background: linear-gradient(135deg, rgba(220,252,231,0.9), rgba(187,247,208,0.9));
+    color: #14532d;
+    border-color: rgba(34,197,94,0.6);
+}
+body.light-mode footer { color: #6b21a8; opacity: 1; }
+
+body.light-mode .premium-card-modal,
+body.light-mode .edit-modal-card {
+    background: linear-gradient(145deg, #ffffff, #fdf4ff);
+    border-color: rgba(168,85,247,0.5);
+    box-shadow: 0 0 50px rgba(168,85,247,0.25);
+}
+body.light-mode .premium-card-modal p,
+body.light-mode .edit-modal-card .current-file-info { color: #581c87; }
+body.light-mode .edit-modal-card h3 { color: #3b0764; text-shadow: none; }
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media (max-width: 768px) {
+    body { padding: 0.6rem 0.5rem; }
+
+    .top-bar {
+        border-radius: 18px;
+        padding: 0.65rem;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.6rem;
+        text-align: center;
+    }
+    .logo-area {
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+        padding-left: 0;
+    }
+    .logo { font-size: 1rem; white-space: normal; }
+    .badge { font-size: 0.55rem; white-space: normal; }
+
+    .social-links {
+        width: 100%;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .hero {
+        padding: 1.2rem;
+        border-radius: 1.4rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+    }
+    .hero h1 { font-size: 1.3rem; }
+    .hero p { font-size: 0.78rem; }
+
+    .btn-group { width: 100%; }
+    .filter-btn { flex: 1; padding: 0.5rem; font-size: 0.72rem; }
+
+    .dashboard-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .upload-card, .preview-card { padding: 1rem; border-radius: 1.2rem; }
+
+    .file-card { padding: 0.9rem; border-radius: 1rem; }
+    .file-card h4 { font-size: 0.9rem; }
+
+    .actions {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.35rem;
+    }
+    .btn-sm {
+        width: 100%;
+        justify-content: center;
+        padding: 0.35rem 0.2rem;
+        font-size: 0.6rem;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    .btn-sm i { font-size: 0.65rem; }
+
+    .files-grid { max-height: none; }
+
+    .edit-modal-card { padding: 1.2rem; border-radius: 1.2rem; }
+    .premium-card-modal { padding: 1.3rem; }
+
+    .menu-toggle-btn {
+        width: 40px;
+        height: 40px;
+        top: 12px;
+        left: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .btn-sm { font-size: 0.55rem; padding: 0.3rem 0.1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- BOTÓN HAMBURGUESA -->
+<button class="menu-toggle-btn" id="menuToggleBtn" aria-label="Abrir menú">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar-panel" id="sidebarPanel">
+    <div class="sidebar-logo">
+        <img src="/favicon.jpg" alt="Rafael Codex" class="sidebar-logo-img" onerror="this.style.display='none'">
+        <div class="brand">RAFAEL-CODEX</div>
+        <div class="tagline">ADMIN . PANEL</div>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li>
+            <a href="#" class="menu-item" id="menuSubir">
+                <i class="fas fa-upload"></i>
+                <span>Subir recurso</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" class="menu-item" id="menuCatalog">
+                <i class="fas fa-store"></i>
+                <span>Ver catálogo</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" class="menu-item" id="menuRefresh">
+                <i class="fas fa-sync-alt"></i>
+                <span>Recargar datos</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-divider"></div>
+
+    <ul class="sidebar-menu">
+        <li>
+            <a href="https://wa.me/51919627898" target="_blank" class="menu-item">
+                <i class="fab fa-whatsapp" style="color:#25D366;"></i>
+                <span>WhatsApp</span>
+            </a>
+        </li>
+        <li>
+            <a href="https://rafaelcodex.com/" target="_blank" class="menu-item">
+                <i class="fas fa-globe"></i>
+                <span>Ver web pública</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-mode">
+        <button class="menu-item" id="sidebarModeToggle">
+            <span style="display:flex;align-items:center;gap:0.75rem;">
+                <i class="fas fa-moon" id="sidebarModeIcon"></i>
+                <span id="sidebarModeLabel">Modo oscuro</span>
+            </span>
+            <span class="toggle-dot"></span>
+        </button>
+    </div>
+</aside>
+
+<!-- CONTENEDOR PRINCIPAL -->
+<div class="container">
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="logo-area">
+            <span class="logo">✦ RAFAEL-CODEX ✦</span>
+            <span class="badge">⚙️ PANEL ADMIN</span>
+        </div>
+        <div class="social-links">
+            <button type="button" class="mode-toggle-btn" id="modeToggleBtn">
+                <i class="fas fa-moon"></i>
+                <span>MODO</span>
+            </button>
+            <a href="https://wa.me/51919627898" target="_blank" class="social-btn whatsapp">
+                <i class="fab fa-whatsapp"></i>
+                <span>+51 919627898</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+        <div>
+            <h1>Panel de <span class="hero-accent">Administración</span></h1>
+            <p>Gestiona, edita y publica códigos HTML, Python y contenido premium directamente a tu Firestore.</p>
+        </div>
+        <div class="btn-group">
+            <button class="filter-btn free" id="filterFreeBtn">🎁 GRATIS</button>
+            <button class="filter-btn premium" id="filterPremiumBtn">💎 PREMIUM</button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="dashboard-grid">
+
+        <!-- SUBIR RECURSO -->
+        <div class="upload-card" id="upload">
+            <h3><i class="fas fa-cloud-upload-alt"></i> Subir recurso</h3>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="fileName" placeholder="Ej: Curso React + Firebase" required>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea rows="2" id="fileDesc" placeholder="Detalles del contenido..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tipo *</label>
+                    <select id="fileType" required>
+                        <option value="gratis">🎁 Gratis (HTML o Python descargable)</option>
+                        <option value="premium">💎 Premium (solo enlace YouTube - sin descarga)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📂 Categoría *</label>
+                    <select id="fileCategory" required>
+                        <option value="">Selecciona una categoría</option>
+                        <option value="Corazones">💖 Corazones</option>
+                        <option value="Estrellas">⭐ Estrellas</option>
+                        <option value="Animaciones Interactivas">✨ Animaciones Interactivas</option>
+                        <option value="Galaxias">🌌 Galaxias</option>
+                        <option value="Flores">🌸 Flores</option>
+                        <option value="Dibujos Animados">🎨 Dibujos Animados</option>
+                        <option value="Cumpleaños">🎂 Cumpleaños</option>
+                        <option value="Navidad">🎄 Navidad</option>
+                        <option value="Animacion de Letras">🔤 Animación de Letras</option>
+                        <option value="python">🐍 Python</option>
+                        <option value="Otros">📦 Otros</option>
+                    </select>
+                </div>
+                <div class="form-group" id="precioGroup">
+                    <label>Precio (USD) - Solo informativo</label>
+                    <input type="number" id="filePrice" step="0.01" placeholder="Ej: 9.99" value="9.99">
+                    <small>El usuario compra vía WhatsApp y obtiene acceso a ver en YouTube</small>
+                </div>
+
+                <div class="form-group link-compra-group" id="linkCompraGroup">
+                    <label><i class="fas fa-bolt"></i> LINK DE COMPRA AUTOMÁTICA</label>
+                    <input type="url" id="fileLinkCompra" placeholder="https://buymeacoffee.com/rafaelcodex/e/xxxxx">
+                    <small>💡 Pega aquí el enlace de Buy Me a Coffee del producto. Si lo dejas vacío, solo se mostrará el botón de WhatsApp.</small>
+                    <div style="margin-top:6px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <button type="button" class="link-preview-btn" id="probarLinkBtn">
+                            <i class="fas fa-external-link-alt"></i> Probar enlace
+                        </button>
+                        <span id="linkStatus"></span>
+                    </div>
+                </div>
+
+                <div class="form-group" id="urlGroup">
+                    <label>🔗 ENLACE DE YOUTUBE (opcional)</label>
+                    <input type="url" id="fileUrl" placeholder="https://www.youtube.com/watch?v=xxxxxxxx">
+                    <small id="urlHelp">🎬 Puedes agregar un video de YouTube para este recurso.</small>
+                </div>
+                <div class="form-group" id="fileGroup">
+                    <label>📁 Archivo HTML o Python (solo para gratis)</label>
+                    <div class="file-area" id="fileDropArea">
+                        <i class="fas fa-file-code fa-2x"></i>
+                        <p>Sube .html, .htm o .py (descarga directa)</p>
+                        <input type="file" id="htmlFileInput" accept=".html,.htm,.py" style="display: none;">
+                        <button type="button" class="btn-sm" id="selectFileBtn">Elegir archivo</button>
+                        <span id="selectedFileName">Ningún archivo</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>🖼️ Imagen de preview</label>
+                    <div class="file-area" id="imageDropArea">
+                        <i class="fas fa-image fa-2x"></i>
+                        <p>Selecciona imagen (opcional)</p>
+                        <input type="file" id="imageInput" accept="image/*" style="display:none;">
+                        <button type="button" class="btn-sm" id="selectImageBtn">Elegir imagen</button>
+                        <span id="selectedImageName">Ninguna imagen</span>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary-neon" style="width:100%;">
+                    <i class="fas fa-rocket"></i> Publicar
+                </button>
+            </form>
+        </div>
+
+        <!-- CATÁLOGO -->
+        <div class="preview-card">
+            <h3>
+                <i class="fas fa-store"></i> Catálogo
+                <span style="font-size:0.72rem;color:#a5b4fc;font-weight:500;">✨ Premium: VER + COMPRAR</span>
+                <span id="filterIndicator" class="filter-indicator"></span>
+            </h3>
+            <div id="filesListContainer" class="files-grid">
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- MODAL YOUTUBE -->
+<div id="youtubeModal" class="youtube-modal hidden">
+    <div class="youtube-card">
+        <button class="close-yt-btn" id="closeYtModalBtn">✕</button>
+        <iframe id="youtubeIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <div class="embed-note">🔒 Visualización protegida - Solo puedes ver el video, no descargar el código.</div>
+    </div>
+</div>
+
+<!-- MODAL COMPRA PREMIUM -->
+<div id="premiumBuyModal" class="premium-access-modal hidden">
+    <div class="premium-card-modal">
+        <i class="fas fa-crown" style="font-size: 3rem; color: gold; margin-bottom: 10px;"></i>
+        <h2>🔐 ACCESO PREMIUM</h2>
+        <p>Para obtener el enlace del video y ver el contenido exclusivo, contacta por WhatsApp.<br>✅ Compra segura y verificada.</p>
+        <div class="modal-buttons">
+            <button id="confirmWhatsappBuyBtn" class="btn-whatsapp-modal">
+                <i class="fab fa-whatsapp"></i> Comprar / Verificar acceso
+            </button>
+            <button id="cancelBuyModalBtn" class="btn-cancel-modal">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, updateDoc, doc, query, orderBy, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBobMKnrJxr-ouoDzw4WRIsMqF0sSg8uWo",
+    authDomain: "rafael-store-582.firebaseapp.com",
+    projectId: "rafael-store-582",
+    storageBucket: "rafael-store-582.firebasestorage.app",
+    messagingSenderId: "730635979630",
+    appId: "1:730635979630:web:78fc28958d44e9bb6c0f7f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const archivosCollection = collection(db, 'archivos');
+
+// 🔥 NUEVO: colección de logs de auditoría
+const logsCollection = collection(db, 'logs');
+
+let todosLosArchivos = [];
+window.todosLosArchivos = todosLosArchivos;
+let filtroActual = "todos";
+let pendingPremiumItem = null;
+
+const form = document.getElementById("uploadForm");
+const fileTypeSelect = document.getElementById("fileType");
+const urlGroup = document.getElementById("urlGroup");
+const fileGroup = document.getElementById("fileGroup");
+const fileInput = document.getElementById("htmlFileInput");
+const selectFileBtn = document.getElementById("selectFileBtn");
+const fileNameText = document.getElementById("selectedFileName");
+const imageInput = document.getElementById("imageInput");
+const selectImageBtn = document.getElementById("selectImageBtn");
+const selectedImageName = document.getElementById("selectedImageName");
+const filterFreeBtn = document.getElementById("filterFreeBtn");
+const filterPremiumBtn = document.getElementById("filterPremiumBtn");
+const filterIndicator = document.getElementById("filterIndicator");
+
+let imagenComprimida = "";
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+function inicializarSidebar() {
+    const menuBtn = document.getElementById("menuToggleBtn");
+    const overlay = document.getElementById("sidebarOverlay");
+    const panel = document.getElementById("sidebarPanel");
+
+    if (!menuBtn || !overlay || !panel) return;
+
+    function abrirMenu() {
+        panel.classList.add("open");
+        overlay.classList.add("active");
+        document.body.style.overflow = "hidden";
+    }
+    function cerrarMenu() {
+        panel.classList.remove("open");
+        overlay.classList.remove("active");
+        document.body.style.overflow = "";
+    }
+
+    menuBtn.addEventListener("click", () => {
+        if (panel.classList.contains("open")) cerrarMenu();
+        else abrirMenu();
+    });
+    overlay.addEventListener("click", cerrarMenu);
+
+    document.getElementById("menuSubir")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.getElementById("upload").scrollIntoView({ behavior: "smooth" });
+        cerrarMenu();
+    });
+    document.getElementById("menuCatalog")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.getElementById("filesListContainer").scrollIntoView({ behavior: "smooth" });
+        cerrarMenu();
+    });
+    document.getElementById("menuRefresh")?.addEventListener("click", async (e) => {
+        e.preventDefault();
+        cerrarMenu();
+        await cargarArchivos();
+        mostrarToast("🔄 Catálogo recargado");
+    });
+
+    const sidebarModeToggle = document.getElementById("sidebarModeToggle");
+    if (sidebarModeToggle) {
+        sidebarModeToggle.addEventListener("click", () => {
+            document.body.classList.toggle("light-mode");
+            const modoClaro = document.body.classList.contains("light-mode");
+            localStorage.setItem("rafael_codex_modo", modoClaro ? "claro" : "oscuro");
+            actualizarBotonModo();
+            actualizarSidebarModeLabel();
+        });
+    }
+    actualizarSidebarModeLabel();
+}
+
+function actualizarSidebarModeLabel() {
+    const modoClaro = document.body.classList.contains("light-mode");
+    const icon = document.getElementById("sidebarModeIcon");
+    const label = document.getElementById("sidebarModeLabel");
+    if (icon) icon.className = modoClaro ? "fas fa-sun" : "fas fa-moon";
+    if (label) label.textContent = modoClaro ? "Modo claro" : "Modo oscuro";
+}
+
+function inicializarModo() {
+    const modoGuardado = localStorage.getItem("rafael_codex_modo");
+    if (modoGuardado === "claro") document.body.classList.add("light-mode");
+    actualizarBotonModo();
+    actualizarSidebarModeLabel();
+
+    const boton = document.getElementById("modeToggleBtn");
+    if (boton) {
+        boton.onclick = () => {
+            document.body.classList.toggle("light-mode");
+            const modoClaro = document.body.classList.contains("light-mode");
+            localStorage.setItem("rafael_codex_modo", modoClaro ? "claro" : "oscuro");
+            actualizarBotonModo();
+            actualizarSidebarModeLabel();
+        };
+    }
+}
+
+function actualizarBotonModo() {
+    const boton = document.getElementById("modeToggleBtn");
+    if (!boton) return;
+    const modoClaro = document.body.classList.contains("light-mode");
+    boton.innerHTML = modoClaro
+        ? '<i class="fas fa-sun"></i><span>MODO</span>'
+        : '<i class="fas fa-moon"></i><span>MODO</span>';
+}
+
+/* =========================================================
+   TOGGLE CAMPOS
+========================================================= */
+function toggleFieldsByType() {
+    const tipo = fileTypeSelect.value;
+    urlGroup.style.display = "block";
+
+    if (tipo === "premium") {
+        fileGroup.style.display = "none";
+        document.getElementById("fileUrl").required = true;
+        if (fileInput) fileInput.required = false;
+        document.getElementById("urlHelp").textContent = "⚠️ El enlace de YouTube es obligatorio para contenido Premium.";
+
+        document.getElementById("linkCompraGroup").style.display = "block";
+    } else {
+        fileGroup.style.display = "block";
+        document.getElementById("fileUrl").required = false;
+        if (fileInput) fileInput.required = true;
+        document.getElementById("urlHelp").textContent = "🎬 Opcional: puedes agregar un video de YouTube para explicar o mostrar el código.";
+
+        document.getElementById("linkCompraGroup").style.display = "none";
+        document.getElementById("fileLinkCompra").value = "";
+        document.getElementById("linkStatus").innerHTML = "";
+    }
+}
+fileTypeSelect.addEventListener("change", toggleFieldsByType);
+toggleFieldsByType();
+
+/* =========================================================
+   VALIDAR Y PROBAR LINK DE COMPRA
+========================================================= */
+function validarUrlCompra(url) {
+    if (!url) return null;
+    try {
+        const u = new URL(url);
+        if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+        return url;
+    } catch {
+        return null;
+    }
+}
+
+document.getElementById("probarLinkBtn").addEventListener("click", () => {
+    const input = document.getElementById("fileLinkCompra");
+    const status = document.getElementById("linkStatus");
+    const url = input.value.trim();
+
+    if (!url) {
+        status.innerHTML = `<span class="link-status-error"><i class="fas fa-times-circle"></i> Campo vacío</span>`;
+        return;
+    }
+
+    const valida = validarUrlCompra(url);
+    if (!valida) {
+        status.innerHTML = `<span class="link-status-error"><i class="fas fa-times-circle"></i> URL inválida</span>`;
+        return;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+    status.innerHTML = `<span class="link-status-ok"><i class="fas fa-check-circle"></i> Enlace abierto para verificar</span>`;
+});
+
+/* =========================================================
+   COMPRIMIR IMAGEN
+========================================================= */
+function comprimirImagen(file, maxWidth, calidad) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width, height = img.height;
+                if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
+                canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', calidad));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+selectImageBtn.onclick = () => imageInput.click();
+imageInput.onchange = async () => {
+    if (imageInput.files.length) {
+        const file = imageInput.files[0];
+        selectedImageName.textContent = `Comprimiendo...`;
+        try {
+            imagenComprimida = await comprimirImagen(file, 800, 0.6);
+            selectedImageName.textContent = `✅ ${file.name}`;
+        } catch {
+            mostrarToast("❌ Error imagen");
+            imagenComprimida = "";
+            selectedImageName.textContent = "Error";
+        }
+    }
+};
+
+selectFileBtn.onclick = () => fileInput.click();
+fileInput.onchange = () => {
+    if (fileInput.files.length) fileNameText.textContent = fileInput.files[0].name;
+};
+
+/* =========================================================
+   LEER ARCHIVO
+========================================================= */
+function leerArchivoComoTexto(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
+
+/* =========================================================
+   YOUTUBE
+========================================================= */
+function extraerYoutubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+function obtenerEmbedUrlFromYoutubeUrl(rawUrl) {
+    const videoId = extraerYoutubeId(rawUrl);
+    if (!videoId) return null;
+    return `https://www.youtube.com/embed/${videoId}`;
+}
+
+/* =========================================================
+   SUBIR RECURSO
+========================================================= */
+form.onsubmit = async (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById("fileName").value.trim();
+    if (!nombre) return mostrarToast("❌ Nombre requerido");
+    const tipo = fileTypeSelect.value;
+    let precio = tipo === "premium" ? parseFloat(document.getElementById("filePrice").value) : null;
+    if (tipo === "premium" && (isNaN(precio) || precio <= 0)) precio = 9.99;
+
+    let url = null;
+    let contenido = null;
+    let nombreArchivo = null;
+
+    const rawUrl = document.getElementById("fileUrl").value.trim();
+    if (rawUrl) {
+        const embedUrl = obtenerEmbedUrlFromYoutubeUrl(rawUrl);
+        if (!embedUrl) return mostrarToast("❌ Enlace de YouTube no válido");
+        url = embedUrl;
+    }
+
+    if (tipo === "premium") {
+        if (!url) return mostrarToast("❌ El contenido Premium necesita un enlace de YouTube");
+    } else {
+        if (!fileInput.files.length) return mostrarToast("❌ Selecciona un archivo .html o .py");
+        if (fileInput.files[0].size > 10 * 1024 * 1024) return mostrarToast("❌ Máximo 10MB");
+
+        const archivoSeleccionado = fileInput.files[0];
+        const esPython = document.getElementById("fileCategory").value === "python";
+
+        if (esPython) {
+            if (!archivoSeleccionado.name.toLowerCase().endsWith(".py")) {
+                return mostrarToast("❌ Para Python debes seleccionar un archivo .py");
+            }
+        } else {
+            if (!archivoSeleccionado.name.toLowerCase().endsWith(".html") &&
+                !archivoSeleccionado.name.toLowerCase().endsWith(".htm")) {
+                return mostrarToast("❌ Para esta categoría debes seleccionar un archivo .html");
+            }
+        }
+
+        nombreArchivo = archivoSeleccionado.name;
+        contenido = await leerArchivoComoTexto(archivoSeleccionado);
+    }
+
+    const linkCompraRaw = document.getElementById("fileLinkCompra").value.trim();
+    let linkCompraValidado = null;
+    if (tipo === "premium" && linkCompraRaw) {
+        linkCompraValidado = validarUrlCompra(linkCompraRaw);
+        if (!linkCompraValidado) {
+            mostrarToast("❌ El link de compra automática no es una URL válida");
+            return;
+        }
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publicando...';
+    submitBtn.disabled = true;
+
+    try {
+        const data = {
+            nombre,
+            descripcion: document.getElementById("fileDesc").value.trim(),
+            categoria: document.getElementById("fileCategory").value,
+            imagen: imagenComprimida || null,
+            tipo,
+            precio: tipo === "premium" ? precio : null,
+            fecha: new Date().toISOString(),
+            timestamp: serverTimestamp()
+        };
+        if (url) data.url = url;
+        if (tipo === "gratis") {
+            data.contenido = contenido;
+            data.nombreArchivo = nombreArchivo;
+        }
+        if (tipo === "premium") {
+            data.linkCompra = linkCompraValidado || null;
+        }
+
+        const docCreado = await addDoc(archivosCollection, data);
+
+        // 🔥 NUEVO: verificación post-guardado
+        try {
+            const verif = await getDoc(docCreado);
+            const datosGuardados = verif.data();
+            if (datosGuardados.tipo !== tipo) {
+                mostrarToast("⚠️ ADVERTENCIA: el tipo no se guardó correctamente");
+                console.warn("Tipo esperado:", tipo, "Tipo guardado:", datosGuardados.tipo);
+            } else {
+                console.log("✅ Verificación OK:", { id: docCreado.id, tipo: datosGuardados.tipo, precio: datosGuardados.precio });
+            }
+        } catch (e) {
+            console.warn("No se pudo verificar el guardado:", e);
+        }
+
+        const categoriaPublicada = document.getElementById("fileCategory").value;
+        mostrarToast(
+            `✅ Publicado (${
+                tipo === 'premium'
+                    ? '💎 Premium YouTube'
+                    : categoriaPublicada === 'python'
+                        ? '🐍 Gratis Python'
+                        : '🎁 Gratis HTML'
+            })`
+        );
+
+        form.reset();
+        imagenComprimida = "";
+        selectedImageName.textContent = "Ninguna imagen";
+        fileNameText.textContent = "Ningún archivo";
+        document.getElementById("fileUrl").value = "";
+        document.getElementById("fileLinkCompra").value = "";
+        document.getElementById("linkStatus").innerHTML = "";
+        fileInput.value = "";
+        toggleFieldsByType();
+        await cargarArchivos();
+    } catch (err) {
+        mostrarToast("❌ Error: " + err.message);
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+};
+
+/* =========================================================
+   PREMIUM
+========================================================= */
+const WHATSAPP_NUMBER = "51919627898";
+const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
+
+function mostrarModalCompra(archivo) {
+    pendingPremiumItem = archivo;
+    const modal = document.getElementById("premiumBuyModal");
+    modal.classList.remove("hidden");
+}
+
+function verVideoPremium(archivo) {
+    if (!archivo.url) {
+        mostrarToast("❌ Error: no hay enlace de video");
+        return;
+    }
+    window.open(archivo.url, '_blank');
+    mostrarToast("🔓 Abriendo video en nueva pestaña");
+}
+
+function comprarConfirmado() {
+    if (pendingPremiumItem) {
+        const mensajeWA = `Hola, quiero COMPRAR el contenido premium *${encodeURIComponent(pendingPremiumItem.nombre)}* para ver el video exclusivo. Precio: $${pendingPremiumItem.precio || 9.99} USD.`;
+        const urlWA = `${WHATSAPP_LINK}?text=${mensajeWA}`;
+        window.open(urlWA, '_blank');
+        mostrarToast("📱 Redirigiendo a WhatsApp para comprar");
+    } else {
+        mostrarToast("Error: producto no identificado");
+    }
+    cerrarModalCompra();
+}
+
+function cerrarModalCompra() {
+    const modal = document.getElementById("premiumBuyModal");
+    modal.classList.add("hidden");
+    pendingPremiumItem = null;
+}
+
+/* =========================================================
+   VER / DESCARGAR
+========================================================= */
+function verGratis(contenidoHtml) {
+    const ventana = window.open('', '_blank');
+    ventana.document.write(contenidoHtml);
+    ventana.document.close();
+}
+
+function descargarGratis(archivo) {
+    const esPython = archivo.categoria === "python";
+    const blob = new Blob(
+        [archivo.contenido],
+        { type: esPython ? "text/x-python" : "text/html" }
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = archivo.nombreArchivo ||
+        `${archivo.nombre.replace(/[^a-z0-9]/gi, "_")}${esPython ? ".py" : ".html"}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    mostrarToast(esPython ? "🐍 Descarga Python iniciada" : "✅ Descarga HTML iniciada");
+}
+
+function compartirArchivo(archivo) {
+    const url = `${window.location.href.split('?')[0]}?share=${archivo.id}`;
+    if (navigator.share) {
+        navigator.share({ title: 'Rafael-Codex', text: archivo.nombre, url })
+            .catch(() => copiarAlPortapapeles(url));
+    } else {
+        copiarAlPortapapeles(url);
+    }
+    mostrarToast("🔗 Enlace copiado");
+}
+
+/* =========================================================
+   MODAL EDICIÓN — 🔥 CON ARREGLOS
+========================================================= */
+async function abrirModalEdicion(archivo) {
+    const overlay = document.createElement('div');
+    overlay.className = 'edit-modal-overlay';
+
+    let nuevaImagenBase64 = null;
+    let nuevoContenidoHtml = null;
+    let nuevoNombreArchivo = null;
+
+    let imagenPreviewHtml = '';
+    if (archivo.imagen) {
+        imagenPreviewHtml = `<img src="${archivo.imagen}" class="image-preview-edit" id="editImagenPreview">`;
+    }
+
+    // 🔥 NUEVO: guardamos el tipo actual para preservarlo si no se cambia
+    const tipoActual = archivo.tipo || 'gratis';
+
+    let htmlContent = `
+        <div class="edit-modal-card">
+            <h3><i class="fas fa-pen"></i> Editar Recurso</h3>
+
+            <div class="form-group">
+                <label>📛 Nombre</label>
+                <input type="text" id="editNombre" value="${escapeHtml(archivo.nombre)}">
+            </div>
+
+            <div class="form-group">
+                <label>📝 Descripción</label>
+                <textarea id="editDescripcion" rows="3">${escapeHtml(archivo.descripcion || '')}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>📂 Categoría</label>
+                <select id="editCategoria">
+                    <option value="Corazones" ${archivo.categoria === 'Corazones' ? 'selected' : ''}>💖 Corazones</option>
+                    <option value="Estrellas" ${archivo.categoria === 'Estrellas' ? 'selected' : ''}>⭐ Estrellas</option>
+                    <option value="Animaciones Interactivas" ${archivo.categoria === 'Animaciones Interactivas' ? 'selected' : ''}>✨ Animaciones Interactivas</option>
+                    <option value="Galaxias" ${archivo.categoria === 'Galaxias' ? 'selected' : ''}>🌌 Galaxias</option>
+                    <option value="Flores" ${archivo.categoria === 'Flores' ? 'selected' : ''}>🌸 Flores</option>
+                    <option value="Dibujos Animados" ${archivo.categoria === 'Dibujos Animados' ? 'selected' : ''}>🎨 Dibujos Animados</option>
+                    <option value="Cumpleaños" ${archivo.categoria === 'Cumpleaños' ? 'selected' : ''}>🎂 Cumpleaños</option>
+                    <option value="Navidad" ${archivo.categoria === 'Navidad' ? 'selected' : ''}>🎄 Navidad</option>
+                    <option value="Animacion de Letras" ${archivo.categoria === 'Animacion de Letras' ? 'selected' : ''}>🔤 Animación de Letras</option>
+                    <option value="python" ${archivo.categoria === 'python' ? 'selected' : ''}>🐍 Python</option>
+                    <option value="Otros" ${archivo.categoria === 'Otros' ? 'selected' : ''}>📦 Otros</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>🎯 Tipo</label>
+                <select id="editTipo">
+                    <option value="gratis" ${tipoActual === 'gratis' ? 'selected' : ''}>🎁 Gratis</option>
+                    <option value="premium" ${tipoActual === 'premium' ? 'selected' : ''}>💎 Premium</option>
+                </select>
+                <small>⚠️ Cambiar el tipo puede afectar la forma en que se muestra el recurso.</small>
+            </div>
+
+            <div class="form-group">
+                <label>🖼️ Cambiar Imagen (opcional)</label>
+                <div class="file-area" id="editImageArea">
+                    <i class="fas fa-image fa-2x"></i>
+                    <p>Selecciona nueva imagen (dejar vacío para mantener actual)</p>
+                    <input type="file" id="editImageInput" accept="image/*" style="display:none;">
+                    <button type="button" class="btn-sm" id="editSelectImageBtn">Elegir imagen</button>
+                    <span id="editSelectedImageName">Ninguna imagen seleccionada</span>
+                    ${imagenPreviewHtml}
+                </div>
+            </div>
+    `;
+
+    if (archivo.tipo === 'premium') {
+        htmlContent += `
+            <div class="form-group">
+                <label>💰 Precio (USD)</label>
+                <input type="number" id="editPrecio" step="0.01" value="${archivo.precio || 9.99}">
+            </div>
+
+            <div class="form-group link-compra-group">
+                <label><i class="fas fa-bolt"></i> LINK DE COMPRA AUTOMÁTICA</label>
+                <input type="url" id="editLinkCompra" placeholder="https://buymeacoffee.com/rafaelcodex/e/xxxxx" value="${archivo.linkCompra ? escapeHtml(archivo.linkCompra) : ''}">
+                <small>💡 Déjalo vacío para DESACTIVAR el botón de compra automática.</small>
+            </div>
+        `;
+    } else {
+        htmlContent += `
+            <div class="form-group">
+                <label>📁 Cambiar Archivo (opcional)</label>
+                <input type="file" id="editFile" accept="${archivo.categoria === 'python' ? '.py' : '.html,.htm'}">
+                <small>Puedes seleccionar un nuevo archivo para reemplazar el actual.</small>
+                <div class="current-file-info">
+                    📄 Archivo actual: ${escapeHtml(archivo.nombreArchivo || 'Sin nombre')}
+                </div>
+            </div>
+        `;
+    }
+
+    htmlContent += `
+        <div class="form-group">
+            <label>🔗 URL de YouTube</label>
+            <input type="url" id="editUrl" value="${escapeHtml(archivo.url || '')}" placeholder="https://www.youtube.com/watch?v=xxxxxxxx">
+            <small>🎬 Puedes agregar o cambiar el video. Déjalo vacío para QUITAR el video actual.</small>
+        </div>
+
+        <div class="edit-buttons">
+            <button class="btn-edit-save" id="guardarEdicionBtn">
+                <i class="fas fa-save"></i> Guardar Cambios
+            </button>
+            <button class="btn-edit-cancel" id="cancelarEdicionBtn">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    </div>`;
+
+    overlay.innerHTML = htmlContent;
+    document.body.appendChild(overlay);
+
+    const editImageInput = overlay.querySelector('#editImageInput');
+    const editSelectImageBtn = overlay.querySelector('#editSelectImageBtn');
+    const editSelectedImageName = overlay.querySelector('#editSelectedImageName');
+
+    editSelectImageBtn.onclick = () => editImageInput.click();
+
+    editImageInput.onchange = async () => {
+        if (!editImageInput.files.length) return;
+        const file = editImageInput.files[0];
+        editSelectedImageName.textContent = 'Comprimiendo...';
+        try {
+            nuevaImagenBase64 = await comprimirImagen(file, 800, 0.6);
+            editSelectedImageName.textContent = `✅ Nueva imagen: ${file.name}`;
+            let preview = overlay.querySelector('#editImagenPreview');
+            if (preview) {
+                preview.src = nuevaImagenBase64;
+            } else {
+                const container = overlay.querySelector('#editImageArea');
+                const img = document.createElement('img');
+                img.src = nuevaImagenBase64;
+                img.className = 'image-preview-edit';
+                img.id = 'editImagenPreview';
+                container.appendChild(img);
+            }
+        } catch (error) {
+            console.error('Error al comprimir imagen:', error);
+            mostrarToast("❌ Error al procesar imagen");
+            nuevaImagenBase64 = null;
+            editSelectedImageName.textContent = "Error al procesar";
+        }
+    };
+
+    if (archivo.tipo !== 'premium') {
+        const editFileInput = overlay.querySelector('#editFile');
+        if (editFileInput) {
+            editFileInput.onchange = async () => {
+                if (!editFileInput.files.length) return;
+                const file = editFileInput.files[0];
+                if (file.size > 10 * 1024 * 1024) {
+                    mostrarToast("❌ El archivo no puede superar 10MB");
+                    editFileInput.value = "";
+                    return;
+                }
+                const esPython = archivo.categoria === 'python';
+                const archivoValido = esPython
+                    ? file.name.toLowerCase().endsWith('.py')
+                    : (file.name.toLowerCase().endsWith('.html') || file.name.toLowerCase().endsWith('.htm'));
+                if (!archivoValido) {
+                    mostrarToast(esPython ? "❌ Para Python solo se permiten archivos .py" : "❌ Solo se permiten archivos .html o .htm");
+                    editFileInput.value = "";
+                    return;
+                }
+                try {
+                    nuevoContenidoHtml = await leerArchivoComoTexto(file);
+                    nuevoNombreArchivo = file.name;
+                    mostrarToast(esPython ? `🐍 Nuevo Python seleccionado: ${file.name}` : `📄 Nuevo HTML seleccionado: ${file.name}`);
+                } catch (error) {
+                    console.error('Error al leer archivo:', error);
+                    mostrarToast("❌ Error al leer el archivo");
+                }
+            };
+        }
+    }
+
+    const guardarBtn = overlay.querySelector('#guardarEdicionBtn');
+    const cancelarBtn = overlay.querySelector('#cancelarEdicionBtn');
+
+    guardarBtn.onclick = async () => {
+        const nuevoNombre = overlay.querySelector('#editNombre').value.trim();
+        const nuevaDesc = overlay.querySelector('#editDescripcion').value.trim();
+        const nuevaCategoria = overlay.querySelector('#editCategoria').value;
+        const nuevoTipo = overlay.querySelector('#editTipo').value;
+        const nuevaUrlRaw = overlay.querySelector('#editUrl').value.trim();
+
+        if (!nuevoNombre) {
+            mostrarToast("❌ El nombre no puede estar vacío");
+            return;
+        }
+
+        // 🔥 ARREGLO 1: tipo SIEMPRE se preserva en el updates
+        const updates = {
+            nombre: nuevoNombre,
+            descripcion: nuevaDesc,
+            categoria: nuevaCategoria,
+            tipo: nuevoTipo
+        };
+
+        if (nuevaImagenBase64) updates.imagen = nuevaImagenBase64;
+
+        if (nuevoTipo === 'premium') {
+            const precioInput = overlay.querySelector('#editPrecio');
+            if (precioInput) {
+                const nuevoPrecio = parseFloat(precioInput.value);
+                if (!isNaN(nuevoPrecio) && nuevoPrecio > 0) updates.precio = nuevoPrecio;
+                else updates.precio = 9.99;
+            }
+
+            const linkInput = overlay.querySelector('#editLinkCompra');
+            if (linkInput) {
+                const linkRaw = linkInput.value.trim();
+                if (linkRaw) {
+                    const linkValidado = validarUrlCompra(linkRaw);
+                    if (!linkValidado) {
+                        mostrarToast("❌ El link de compra automática no es una URL válida");
+                        return;
+                    }
+                    updates.linkCompra = linkValidado;
+                } else {
+                    updates.linkCompra = null;
+                }
+            }
+        } else {
+            // Si cambió a gratis, borramos los campos premium
+            if (archivo.tipo === 'premium') {
+                updates.precio = null;
+                updates.linkCompra = null;
+            }
+        }
+
+        // 🔥 ARREGLO 2: la url NO se borra si el campo está vacío
+        // Lógica:
+        // - Si el usuario escribió algo → validar y guardar
+        // - Si el campo está vacío Y ya había url → el usuario la quiere quitar (guardar null)
+        // - Si el campo está vacío Y NO había url → no tocar nada
+        if (nuevaUrlRaw) {
+            const nuevaEmbedUrl = obtenerEmbedUrlFromYoutubeUrl(nuevaUrlRaw);
+            if (!nuevaEmbedUrl) {
+                mostrarToast("❌ URL de YouTube inválida");
+                return;
+            }
+            updates.url = nuevaEmbedUrl;
+        } else if (archivo.url) {
+            // El usuario tenía url y la borró → la quitamos
+            updates.url = null;
+        }
+        // else: no tocamos url (se mantiene el valor actual)
+
+        if (nuevoTipo !== 'premium' && nuevoContenidoHtml) {
+            updates.contenido = nuevoContenidoHtml;
+            updates.nombreArchivo = nuevoNombreArchivo;
+        }
+
+        const originalText = guardarBtn.innerHTML;
+        guardarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        guardarBtn.disabled = true;
+
+        try {
+            const docRef = doc(db, 'archivos', archivo.id);
+            await updateDoc(docRef, updates);
+
+            // 🔥 NUEVO: verificación post-actualización
+            try {
+                const verif = await getDoc(docRef);
+                const datosFinales = verif.data();
+                console.log("✅ Actualización verificada:", {
+                    id: archivo.id,
+                    tipo: datosFinales.tipo,
+                    precio: datosFinales.precio,
+                    url: datosFinales.url ? 'SÍ' : 'NO',
+                    linkCompra: datosFinales.linkCompra ? 'SÍ' : 'NO'
+                });
+                if (datosFinales.tipo !== nuevoTipo) {
+                    mostrarToast("⚠️ ADVERTENCIA: el tipo no se guardó correctamente");
+                }
+            } catch (e) {
+                console.warn("No se pudo verificar la actualización:", e);
+            }
+
+            mostrarToast("✅ Recurso actualizado correctamente");
+            overlay.remove();
+            await cargarArchivos();
+        } catch (error) {
+            console.error('Error al actualizar:', error);
+            mostrarToast("❌ Error al actualizar: " + (error.message || 'Desconocido'));
+            guardarBtn.innerHTML = originalText;
+            guardarBtn.disabled = false;
+        }
+    };
+
+    cancelarBtn.onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+}
+
+/* =========================================================
+   RENDER LISTA
+========================================================= */
+function mostrarArchivosFiltrados() {
+    const container = document.getElementById("filesListContainer");
+    let filtrados = todosLosArchivos;
+    if (filtroActual === "gratis") filtrados = todosLosArchivos.filter(a => a.tipo === "gratis");
+    else if (filtroActual === "premium") filtrados = todosLosArchivos.filter(a => a.tipo === "premium");
+
+    if (!filtrados.length) {
+        container.innerHTML = `
+            <div class="empty-catalog">
+                <i class="fas fa-box-open fa-2x" style="margin-bottom:10px;opacity:0.6;"></i>
+                <p>${
+                    filtroActual === 'gratis'
+                        ? '🎁 No hay códigos gratis'
+                        : filtroActual === 'premium'
+                            ? '💎 No hay enlaces premium de YouTube'
+                            : '📭 Sin recursos'
+                }</p>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = filtrados.map(arch => `
+        <div class="file-card ${arch.tipo === 'premium' ? 'premium-card' : ''}">
+            <h4>📄 ${escapeHtml(arch.nombre)}
+                <span class="price-tag ${arch.tipo === 'gratis' ? 'free' : 'premium'}">
+                    ${arch.tipo === 'gratis' ? '🎁 Gratis' : `💎 $${(arch.precio || 9.99).toFixed(2)} USD`}
+                </span>
+            </h4>
+            ${arch.imagen ? `<img src="${arch.imagen}" class="preview-img-card" alt="preview" onerror="this.style.display='none'">` : ""}
+            <div class="meta-info">
+                <span><i class="fas fa-calendar"></i> ${new Date(arch.fecha).toLocaleDateString()}</span>
+                <span>
+                    <i class="fas ${
+                        arch.tipo === 'premium'
+                            ? 'fa-youtube'
+                            : arch.categoria === 'python'
+                                ? 'fa-python'
+                                : 'fa-code'
+                    }"></i>
+                    ${
+                        arch.tipo === 'premium'
+                            ? 'YouTube (solo ver)'
+                            : arch.categoria === 'python'
+                                ? 'Python descargable'
+                                : 'HTML descargable'
+                    }
+                </span>
+            </div>
+            <p style="font-size:0.82rem;margin:8px 0;color:#a5b4fc;">${escapeHtml(arch.descripcion || "Sin descripción")}</p>
+            <div style="
+                margin-top:8px;
+                display:inline-block;
+                background:rgba(168,85,247,0.12);
+                border:1px solid rgba(192,132,252,0.5);
+                color:#e9d5ff;
+                padding:5px 12px;
+                border-radius:30px;
+                font-size:0.7rem;
+                font-weight:700;
+            ">
+                📂 ${escapeHtml(arch.categoria || "Otros")}
+            </div>
+
+            ${arch.tipo === 'premium' ? `
+                <div style="
+                    margin-top:6px;
+                    margin-left:6px;
+                    display:inline-block;
+                    background:${arch.linkCompra ? 'rgba(250,204,21,0.18)' : 'rgba(107,114,128,0.2)'};
+                    border:1px solid ${arch.linkCompra ? 'rgba(250,204,21,0.6)' : 'rgba(156,163,175,0.4)'};
+                    color:${arch.linkCompra ? '#fde047' : '#9ca3af'};
+                    padding:4px 12px;
+                    border-radius:30px;
+                    font-size:0.65rem;
+                    font-weight:800;
+                ">
+                    ${arch.linkCompra ? '⚡ COMPRA AUTO ACTIVA' : '⚪ SIN COMPRA AUTO'}
+                </div>
+            ` : ''}
+
+            <div class="actions">
+                ${arch.tipo === 'premium' ? `
+                    <button class="btn-sm view-btn" data-id="${arch.id}" data-ver-premium="true">
+                        <i class="fas fa-eye"></i> VER
+                    </button>
+                    <button class="btn-sm buy-btn" data-id="${arch.id}" data-comprar-premium="true">
+                        <i class="fas fa-shopping-cart"></i> COMPRAR
+                    </button>
+                ` : `
+                    ${arch.tipo === 'gratis' && arch.url ? `
+                        <button class="btn-sm view-btn" data-id="${arch.id}" data-ver-video-gratis="true">
+                            <i class="fab fa-youtube"></i> Ver video
+                        </button>
+                    ` : ''}
+                    <button class="btn-sm download-btn" data-id="${arch.id}" data-descargar-gratis="true">
+                        <i class="fas fa-download"></i> Descargar
+                    </button>
+                `}
+                <button class="btn-sm share-btn" data-id="${arch.id}" data-compartir="true">
+                    <i class="fas fa-share-alt"></i> Compartir
+                </button>
+                <button class="btn-sm edit-btn" data-id="${arch.id}" data-editar="true">
+                    <i class="fas fa-pen"></i> Editar
+                </button>
+                <button class="btn-sm delete-btn" data-id="${arch.id}" data-borrar="true">
+                    <i class="fas fa-trash"></i> Borrar
+                </button>
+            </div>
+        </div>
+    `).join('');
+
+    document.querySelectorAll('[data-ver-premium]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const arch = todosLosArchivos.find(a => a.id === btn.getAttribute('data-id'));
+            if (arch) verVideoPremium(arch);
+        });
+    });
+    document.querySelectorAll('[data-ver-video-gratis]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const arch = todosLosArchivos.find(a => a.id === btn.getAttribute('data-id'));
+            if (arch && arch.url) verVideoPremium(arch);
+            else mostrarToast("❌ Este recurso no tiene video");
+        });
+    });
+    document.querySelectorAll('[data-comprar-premium]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const arch = todosLosArchivos.find(a => a.id === btn.getAttribute('data-id'));
+            if (arch) mostrarModalCompra(arch);
+        });
+    });
+    document.querySelectorAll('[data-descargar-gratis]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const arch = todosLosArchivos.find(a => a.id === btn.getAttribute('data-id'));
+            if (arch && arch.contenido) descargarGratis(arch);
+            else mostrarToast("Error al descargar");
+        });
+    });
+    document.querySelectorAll('[data-compartir]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const arch = todosLosArchivos.find(a => a.id === btn.getAttribute('data-id'));
+            if (arch) compartirArchivo(arch);
+        });
+    });
+    document.querySelectorAll('[data-editar]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const arch = todosLosArchivos.find(a => a.id === btn.getAttribute('data-id'));
+            if (arch) abrirModalEdicion(arch);
+        });
+    });
+    document.querySelectorAll('[data-borrar]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-id');
+            const arch = todosLosArchivos.find(a => a.id === id);
+            if (!arch) return;
+
+            // 🔥 ARREGLO 3: confirmación fuerte para borrar
+            const confirmacion = prompt(
+                `⚠️ Para BORRAR PERMANENTEMENTE "${arch.nombre}", escribe exactamente:\n\nBORRAR ${arch.nombre}`
+            );
+            if (confirmacion !== `BORRAR ${arch.nombre}`) {
+                mostrarToast("❌ Borrado cancelado");
+                return;
+            }
+
+            try {
+                // 🔥 ARREGLO 4: log de auditoría antes de borrar
+                try {
+                    await addDoc(logsCollection, {
+                        accion: 'borrado',
+                        idRecurso: id,
+                        nombreRecurso: arch.nombre,
+                        tipoRecurso: arch.tipo || 'gratis',
+                        fecha: serverTimestamp()
+                    });
+                } catch (e) {
+                    console.warn("No se pudo guardar log de auditoría:", e);
+                }
+
+                await deleteDoc(doc(db, 'archivos', id));
+                mostrarToast("✅ Eliminado");
+                await cargarArchivos();
+            } catch (e) {
+                mostrarToast("❌ Error: " + e.message);
+            }
+        });
+    });
+}
+
+/* =========================================================
+   CARGAR
+========================================================= */
+async function cargarArchivos() {
+    const container = document.getElementById("filesListContainer");
+    container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Conectando...</div>';
+    try {
+        const q = query(archivosCollection, orderBy('timestamp', 'desc'));
+        const snap = await getDocs(q);
+        todosLosArchivos = [];
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            if (!d.tipo) d.tipo = "gratis";
+            if (d.tipo === "premium" && !d.precio) d.precio = 9.99;
+            todosLosArchivos.push({ id: docSnap.id, ...d });
+        });
+        window.todosLosArchivos = todosLosArchivos;
+
+        mostrarArchivosFiltrados();
+        actualizarFiltroUI();
+
+        // Diagnóstico en consola
+        const stats = {
+            total: todosLosArchivos.length,
+            gratis: todosLosArchivos.filter(a => a.tipo === 'gratis').length,
+            premium: todosLosArchivos.filter(a => a.tipo === 'premium').length,
+            conUrl: todosLosArchivos.filter(a => a.url).length,
+            conLinkCompra: todosLosArchivos.filter(a => a.linkCompra).length
+        };
+        console.log('📊 Estadísticas:', stats);
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `
+            <div class="empty-catalog">
+                <i class="fas fa-exclamation-triangle fa-2x" style="color:#f87171;margin-bottom:10px;"></i>
+                <p>⚠️ Error al cargar</p>
+                <button class="btn-sm" style="margin-top:10px;" onclick="window.cargarArchivos()">
+                    <i class="fas fa-sync-alt"></i> Reintentar
+                </button>
+            </div>`;
+    }
+}
+
+function actualizarFiltroUI() {
+    if (filtroActual === "gratis") {
+        filterFreeBtn.classList.add("active");
+        filterPremiumBtn.classList.remove("active");
+        filterIndicator.innerHTML = '🎁 Gratis (HTML)';
+    } else if (filtroActual === "premium") {
+        filterPremiumBtn.classList.add("active");
+        filterFreeBtn.classList.remove("active");
+        filterIndicator.innerHTML = '💎 Premium YouTube';
+    } else {
+        filterFreeBtn.classList.remove("active");
+        filterPremiumBtn.classList.remove("active");
+        filterIndicator.innerHTML = '✨ Todo el catálogo';
+    }
+}
+
+function filtrarGratis() {
+    filtroActual = "gratis";
+    mostrarArchivosFiltrados();
+    actualizarFiltroUI();
+    mostrarToast("🎁 Mostrando gratis");
+}
+function filtrarPremium() {
+    filtroActual = "premium";
+    mostrarArchivosFiltrados();
+    actualizarFiltroUI();
+    mostrarToast("💎 Mostrando premium (YouTube)");
+}
+
+filterFreeBtn.addEventListener("click", filtrarGratis);
+filterPremiumBtn.addEventListener("click", filtrarPremium);
+
+/* =========================================================
+   UTILIDADES
+========================================================= */
+function mostrarToast(msg) {
+    let t = document.querySelector('.toast-notification');
+    if (t) t.remove();
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, function(m){
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+function copiarAlPortapapeles(texto) {
+    navigator.clipboard.writeText(texto)
+        .then(() => mostrarToast("✅ Enlace copiado"))
+        .catch(() => prompt("Copia:", texto));
+}
+
+/* =========================================================
+   CIERRE MODALES
+========================================================= */
+document.getElementById("closeYtModalBtn").onclick = () => {
+    const modalYt = document.getElementById("youtubeModal");
+    const iframe = document.getElementById("youtubeIframe");
+    iframe.src = "";
+    modalYt.classList.add("hidden");
+};
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById("youtubeModal");
+    if (e.target === modal) {
+        const iframe = document.getElementById("youtubeIframe");
+        iframe.src = "";
+        modal.classList.add("hidden");
+    }
+});
+document.getElementById("confirmWhatsappBuyBtn").onclick = () => comprarConfirmado();
+document.getElementById("cancelBuyModalBtn").onclick = () => cerrarModalCompra();
+window.addEventListener('click', (e) => {
+    const modalCompra = document.getElementById("premiumBuyModal");
+    if (e.target === modalCompra) cerrarModalCompra();
+});
+
+/* =========================================================
+   INIT
+========================================================= */
+inicializarSidebar();
+inicializarModo();
+window.cargarArchivos = cargarArchivos;
+cargarArchivos();
+</script>
+</body>
+</html>

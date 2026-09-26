@@ -1679,7 +1679,7 @@ body.light-mode .edit-modal-card h3 { color: #3b0764; text-shadow: none; }
                     <label>🖼️ Imagen de preview</label>
                     <div class="file-area" id="imageDropArea">
                         <i class="fas fa-image fa-2x"></i>
-                        <p>Selecciona imagen (opcional)</p>
+                        <p>Selecciona imagen (máx 5MB · JPG/PNG/WEBP/GIF)</p>
                         <input type="file" id="imageInput" accept="image/*" style="display:none;">
                         <button type="button" class="btn-sm" id="selectImageBtn">Elegir imagen</button>
                         <span id="selectedImageName">Ninguna imagen</span>
@@ -1838,7 +1838,6 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("✅ Admin autenticado:", user.email);
         mostrarApp();
-        // Solo cargar si no se ha cargado ya
         if (!window._yaCargado) {
             window._yaCargado = true;
             inicializarSidebar();
@@ -2021,26 +2020,50 @@ document.getElementById("probarLinkBtn").addEventListener("click", () => {
 });
 
 /* =========================================================
-   COMPRIMIR IMAGEN
+   COMPRIMIR IMAGEN — 🔒 CON VALIDACIONES
 ========================================================= */
 function comprimirImagen(file, maxWidth, calidad) {
+    // 🔒 VALIDACIÓN 1: Tamaño máximo 5MB
+    const TAMAÑO_MAXIMO = 5 * 1024 * 1024; // 5MB en bytes
+    if (file.size > TAMAÑO_MAXIMO) {
+        const tamañoMB = (file.size / 1024 / 1024).toFixed(2);
+        return Promise.reject(new Error(`Imagen demasiado grande (${tamañoMB}MB). Máximo 5MB permitido.`));
+    }
+
+    // 🔒 VALIDACIÓN 2: Tipo de archivo
+    const TIPOS_PERMITIDOS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!TIPOS_PERMITIDOS.includes(file.type)) {
+        return Promise.reject(new Error(`Tipo de archivo no permitido (${file.type}). Solo JPG, PNG, WEBP o GIF.`));
+    }
+
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
+                // 🔒 VALIDACIÓN 3: Dimensiones máximas
+                const DIMENSION_MAXIMA = 4000; // 4000px
+                if (img.width > DIMENSION_MAXIMA || img.height > DIMENSION_MAXIMA) {
+                    reject(new Error(`Imagen demasiado grande (${img.width}x${img.height}px). Máximo ${DIMENSION_MAXIMA}x${DIMENSION_MAXIMA}px.`));
+                    return;
+                }
+
                 const canvas = document.createElement('canvas');
                 let width = img.width, height = img.height;
-                if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
-                canvas.width = width; canvas.height = height;
+                if (width > maxWidth) { 
+                    height = (height * maxWidth) / width; 
+                    width = maxWidth; 
+                }
+                canvas.width = width; 
+                canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 resolve(canvas.toDataURL('image/jpeg', calidad));
             };
-            img.onerror = reject;
+            img.onerror = () => reject(new Error('El archivo no es una imagen válida'));
             img.src = e.target.result;
         };
-        reader.onerror = reject;
+        reader.onerror = () => reject(new Error('Error al leer el archivo'));
         reader.readAsDataURL(file);
     });
 }
@@ -2053,8 +2076,8 @@ imageInput.onchange = async () => {
         try {
             imagenComprimida = await comprimirImagen(file, 800, 0.6);
             selectedImageName.textContent = `✅ ${file.name}`;
-        } catch {
-            mostrarToast("❌ Error imagen");
+        } catch (error) {
+            mostrarToast("❌ " + error.message);
             imagenComprimida = "";
             selectedImageName.textContent = "Error";
         }
@@ -2353,7 +2376,7 @@ async function abrirModalEdicion(archivo) {
                 <label>🖼️ Cambiar Imagen (opcional)</label>
                 <div class="file-area" id="editImageArea">
                     <i class="fas fa-image fa-2x"></i>
-                    <p>Selecciona nueva imagen (dejar vacío para mantener actual)</p>
+                    <p>Selecciona nueva imagen (máx 5MB · JPG/PNG/WEBP/GIF)</p>
                     <input type="file" id="editImageInput" accept="image/*" style="display:none;">
                     <button type="button" class="btn-sm" id="editSelectImageBtn">Elegir imagen</button>
                     <span id="editSelectedImageName">Ninguna imagen seleccionada</span>
@@ -2434,7 +2457,7 @@ async function abrirModalEdicion(archivo) {
             }
         } catch (error) {
             console.error('Error al comprimir imagen:', error);
-            mostrarToast("❌ Error al procesar imagen");
+            mostrarToast("❌ " + error.message);
             nuevaImagenBase64 = null;
             editSelectedImageName.textContent = "Error al procesar";
         }

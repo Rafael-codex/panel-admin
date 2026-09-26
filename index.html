@@ -1454,6 +1454,44 @@ body.light-mode .edit-modal-card h3 { color: #3b0764; text-shadow: none; }
 </head>
 <body>
 
+<!-- PANTALLA DE LOGIN (oculta por defecto) -->
+<div id="loginOverlay" style="display:none; position:fixed; inset:0; z-index:99999; 
+     background:#06040d; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(145deg,#150a2e,#08040f); padding:2.5rem; border-radius:24px;
+                border:2px solid rgba(168,85,247,0.5); max-width:420px; width:100%;
+                text-align:center; box-shadow:0 0 60px rgba(168,85,247,0.3);">
+        <div style="font-size:4rem; margin-bottom:1rem; filter:drop-shadow(0 0 20px rgba(168,85,247,0.7));">🔐</div>
+        <h2 style="color:#c084fc; margin-bottom:0.5rem; font-family:'Orbitron',monospace; 
+                   letter-spacing:2px; font-size:1.2rem;">ACCESO ADMIN</h2>
+        <p style="color:#a5b4fc; font-size:0.75rem; margin-bottom:1.8rem;">
+            Solo el administrador puede entrar aquí
+        </p>
+        <input type="email" id="loginEmail" placeholder="Correo electrónico" autocomplete="username"
+               style="width:100%; padding:14px; margin-bottom:12px; border-radius:14px;
+                      border:1px solid rgba(168,85,247,0.4); background:#0a0618;
+                      color:white; font-size:0.9rem; outline:none;
+                      font-family:'Inter',sans-serif; box-sizing:border-box;">
+        <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password"
+               style="width:100%; padding:14px; margin-bottom:20px; border-radius:14px;
+                      border:1px solid rgba(168,85,247,0.4); background:#0a0618;
+                      color:white; font-size:0.9rem; outline:none;
+                      font-family:'Inter',sans-serif; box-sizing:border-box;">
+        <button id="loginBtn"
+                style="width:100%; padding:14px; border:none; border-radius:14px;
+                       background:linear-gradient(135deg,#a855f7,#6366f1);
+                       color:white; font-weight:900; cursor:pointer; font-size:0.95rem;
+                       letter-spacing:1px; font-family:'Inter',sans-serif;
+                       box-shadow:0 0 20px rgba(168,85,247,0.5);">
+            ENTRAR
+        </button>
+        <p id="loginError" style="color:#fca5a5; margin-top:14px; font-size:0.8rem; 
+                                  display:none; font-weight:700;"></p>
+        <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid rgba(168,85,247,0.2);">
+            <p style="color:#64748b; font-size:0.65rem; margin:0;">🔒 Panel protegido · Rafael Codex</p>
+        </div>
+    </div>
+</div>
+
 <!-- BOTÓN HAMBURGUESA -->
 <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="Abrir menú">
     <i class="fas fa-bars"></i>
@@ -1510,6 +1548,17 @@ body.light-mode .edit-modal-card h3 { color: #3b0764; text-shadow: none; }
 
     <div class="sidebar-divider"></div>
 
+    <ul class="sidebar-menu">
+        <li>
+            <a href="#" class="menu-item" id="cerrarSesionBtn" style="color:#fca5a5;">
+                <i class="fas fa-sign-out-alt" style="color:#f87171;"></i>
+                <span>Cerrar sesión</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-divider"></div>
+
     <div class="sidebar-mode">
         <button class="menu-item" id="sidebarModeToggle">
             <span style="display:flex;align-items:center;gap:0.75rem;">
@@ -1522,7 +1571,7 @@ body.light-mode .edit-modal-card h3 { color: #3b0764; text-shadow: none; }
 </aside>
 
 <!-- CONTENEDOR PRINCIPAL -->
-<div class="container">
+<div class="container" id="mainAppContainer" style="display:none;">
 
     <!-- TOP BAR -->
     <div class="top-bar">
@@ -1687,6 +1736,7 @@ body.light-mode .edit-modal-card h3 { color: #3b0764; text-shadow: none; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, updateDoc, doc, query, orderBy, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBobMKnrJxr-ouoDzw4WRIsMqF0sSg8uWo",
@@ -1699,31 +1749,110 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 const archivosCollection = collection(db, 'archivos');
-
-// 🔥 NUEVO: colección de logs de auditoría
 const logsCollection = collection(db, 'logs');
 
-let todosLosArchivos = [];
-window.todosLosArchivos = todosLosArchivos;
-let filtroActual = "todos";
-let pendingPremiumItem = null;
+/* =========================================================
+   🔐 SISTEMA DE LOGIN
+========================================================= */
+const loginOverlay = document.getElementById("loginOverlay");
+const mainAppContainer = document.getElementById("mainAppContainer");
 
-const form = document.getElementById("uploadForm");
-const fileTypeSelect = document.getElementById("fileType");
-const urlGroup = document.getElementById("urlGroup");
-const fileGroup = document.getElementById("fileGroup");
-const fileInput = document.getElementById("htmlFileInput");
-const selectFileBtn = document.getElementById("selectFileBtn");
-const fileNameText = document.getElementById("selectedFileName");
-const imageInput = document.getElementById("imageInput");
-const selectImageBtn = document.getElementById("selectImageBtn");
-const selectedImageName = document.getElementById("selectedImageName");
-const filterFreeBtn = document.getElementById("filterFreeBtn");
-const filterPremiumBtn = document.getElementById("filterPremiumBtn");
-const filterIndicator = document.getElementById("filterIndicator");
+function mostrarLogin() {
+    loginOverlay.style.display = "flex";
+    mainAppContainer.style.display = "none";
+}
 
-let imagenComprimida = "";
+function mostrarApp() {
+    loginOverlay.style.display = "none";
+    mainAppContainer.style.display = "block";
+}
+
+function inicializarLogin() {
+    const loginBtn = document.getElementById("loginBtn");
+    const loginEmail = document.getElementById("loginEmail");
+    const loginPassword = document.getElementById("loginPassword");
+    const loginError = document.getElementById("loginError");
+
+    const intentarLogin = async () => {
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
+
+        if (!email || !password) {
+            loginError.textContent = "⚠️ Rellena todos los campos";
+            loginError.style.display = "block";
+            return;
+        }
+
+        loginBtn.textContent = "Verificando...";
+        loginBtn.disabled = true;
+        loginError.style.display = "none";
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            // onAuthStateChanged detectará el cambio y mostrará la app
+        } catch (error) {
+            console.error("Error login:", error);
+            loginBtn.textContent = "ENTRAR";
+            loginBtn.disabled = false;
+
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                loginError.textContent = "❌ Contraseña incorrecta";
+            } else if (error.code === 'auth/user-not-found') {
+                loginError.textContent = "❌ Usuario no existe";
+            } else if (error.code === 'auth/invalid-email') {
+                loginError.textContent = "❌ Email inválido";
+            } else if (error.code === 'auth/too-many-requests') {
+                loginError.textContent = "⏳ Demasiados intentos. Espera unos minutos";
+            } else {
+                loginError.textContent = "❌ Error: " + error.message;
+            }
+            loginError.style.display = "block";
+        }
+    };
+
+    loginBtn.onclick = intentarLogin;
+
+    loginEmail.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") loginPassword.focus();
+    });
+    loginPassword.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") intentarLogin();
+    });
+}
+
+function inicializarLogout() {
+    const cerrarBtn = document.getElementById("cerrarSesionBtn");
+    if (cerrarBtn) {
+        cerrarBtn.onclick = async (e) => {
+            e.preventDefault();
+            if (!confirm("¿Seguro que quieres cerrar sesión?")) return;
+            await signOut(auth);
+        };
+    }
+}
+
+// Verificar estado de autenticación
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log("✅ Admin autenticado:", user.email);
+        mostrarApp();
+        // Solo cargar si no se ha cargado ya
+        if (!window._yaCargado) {
+            window._yaCargado = true;
+            inicializarSidebar();
+            inicializarModo();
+            inicializarLogout();
+            window.cargarArchivos = cargarArchivos;
+            cargarArchivos();
+        }
+    } else {
+        console.log("🔒 Sin autenticar - mostrando login");
+        mostrarLogin();
+        inicializarLogin();
+    }
+});
 
 /* =========================================================
    SIDEBAR
@@ -1820,6 +1949,20 @@ function actualizarBotonModo() {
 /* =========================================================
    TOGGLE CAMPOS
 ========================================================= */
+const form = document.getElementById("uploadForm");
+const fileTypeSelect = document.getElementById("fileType");
+const urlGroup = document.getElementById("urlGroup");
+const fileGroup = document.getElementById("fileGroup");
+const fileInput = document.getElementById("htmlFileInput");
+const selectFileBtn = document.getElementById("selectFileBtn");
+const fileNameText = document.getElementById("selectedFileName");
+const imageInput = document.getElementById("imageInput");
+const selectImageBtn = document.getElementById("selectImageBtn");
+const selectedImageName = document.getElementById("selectedImageName");
+const filterFreeBtn = document.getElementById("filterFreeBtn");
+const filterPremiumBtn = document.getElementById("filterPremiumBtn");
+const filterIndicator = document.getElementById("filterIndicator");
+
 function toggleFieldsByType() {
     const tipo = fileTypeSelect.value;
     urlGroup.style.display = "block";
@@ -1829,14 +1972,12 @@ function toggleFieldsByType() {
         document.getElementById("fileUrl").required = true;
         if (fileInput) fileInput.required = false;
         document.getElementById("urlHelp").textContent = "⚠️ El enlace de YouTube es obligatorio para contenido Premium.";
-
         document.getElementById("linkCompraGroup").style.display = "block";
     } else {
         fileGroup.style.display = "block";
         document.getElementById("fileUrl").required = false;
         if (fileInput) fileInput.required = true;
         document.getElementById("urlHelp").textContent = "🎬 Opcional: puedes agregar un video de YouTube para explicar o mostrar el código.";
-
         document.getElementById("linkCompraGroup").style.display = "none";
         document.getElementById("fileLinkCompra").value = "";
         document.getElementById("linkStatus").innerHTML = "";
@@ -1954,6 +2095,8 @@ function obtenerEmbedUrlFromYoutubeUrl(rawUrl) {
 /* =========================================================
    SUBIR RECURSO
 ========================================================= */
+let imagenComprimida = "";
+
 form.onsubmit = async (e) => {
     e.preventDefault();
     const nombre = document.getElementById("fileName").value.trim();
@@ -2034,7 +2177,6 @@ form.onsubmit = async (e) => {
 
         const docCreado = await addDoc(archivosCollection, data);
 
-        // 🔥 NUEVO: verificación post-guardado
         try {
             const verif = await getDoc(docCreado);
             const datosGuardados = verif.data();
@@ -2082,6 +2224,7 @@ form.onsubmit = async (e) => {
 ========================================================= */
 const WHATSAPP_NUMBER = "51919627898";
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
+let pendingPremiumItem = null;
 
 function mostrarModalCompra(archivo) {
     pendingPremiumItem = archivo;
@@ -2119,12 +2262,6 @@ function cerrarModalCompra() {
 /* =========================================================
    VER / DESCARGAR
 ========================================================= */
-function verGratis(contenidoHtml) {
-    const ventana = window.open('', '_blank');
-    ventana.document.write(contenidoHtml);
-    ventana.document.close();
-}
-
 function descargarGratis(archivo) {
     const esPython = archivo.categoria === "python";
     const blob = new Blob(
@@ -2155,7 +2292,7 @@ function compartirArchivo(archivo) {
 }
 
 /* =========================================================
-   MODAL EDICIÓN — 🔥 CON ARREGLOS
+   MODAL EDICIÓN
 ========================================================= */
 async function abrirModalEdicion(archivo) {
     const overlay = document.createElement('div');
@@ -2170,7 +2307,6 @@ async function abrirModalEdicion(archivo) {
         imagenPreviewHtml = `<img src="${archivo.imagen}" class="image-preview-edit" id="editImagenPreview">`;
     }
 
-    // 🔥 NUEVO: guardamos el tipo actual para preservarlo si no se cambia
     const tipoActual = archivo.tipo || 'gratis';
 
     let htmlContent = `
@@ -2351,7 +2487,6 @@ async function abrirModalEdicion(archivo) {
             return;
         }
 
-        // 🔥 ARREGLO 1: tipo SIEMPRE se preserva en el updates
         const updates = {
             nombre: nuevoNombre,
             descripcion: nuevaDesc,
@@ -2384,18 +2519,12 @@ async function abrirModalEdicion(archivo) {
                 }
             }
         } else {
-            // Si cambió a gratis, borramos los campos premium
             if (archivo.tipo === 'premium') {
                 updates.precio = null;
                 updates.linkCompra = null;
             }
         }
 
-        // 🔥 ARREGLO 2: la url NO se borra si el campo está vacío
-        // Lógica:
-        // - Si el usuario escribió algo → validar y guardar
-        // - Si el campo está vacío Y ya había url → el usuario la quiere quitar (guardar null)
-        // - Si el campo está vacío Y NO había url → no tocar nada
         if (nuevaUrlRaw) {
             const nuevaEmbedUrl = obtenerEmbedUrlFromYoutubeUrl(nuevaUrlRaw);
             if (!nuevaEmbedUrl) {
@@ -2404,10 +2533,8 @@ async function abrirModalEdicion(archivo) {
             }
             updates.url = nuevaEmbedUrl;
         } else if (archivo.url) {
-            // El usuario tenía url y la borró → la quitamos
             updates.url = null;
         }
-        // else: no tocamos url (se mantiene el valor actual)
 
         if (nuevoTipo !== 'premium' && nuevoContenidoHtml) {
             updates.contenido = nuevoContenidoHtml;
@@ -2422,7 +2549,6 @@ async function abrirModalEdicion(archivo) {
             const docRef = doc(db, 'archivos', archivo.id);
             await updateDoc(docRef, updates);
 
-            // 🔥 NUEVO: verificación post-actualización
             try {
                 const verif = await getDoc(docRef);
                 const datosFinales = verif.data();
@@ -2458,6 +2584,10 @@ async function abrirModalEdicion(archivo) {
 /* =========================================================
    RENDER LISTA
 ========================================================= */
+let filtroActual = "todos";
+let todosLosArchivos = [];
+window.todosLosArchivos = todosLosArchivos;
+
 function mostrarArchivosFiltrados() {
     const container = document.getElementById("filesListContainer");
     let filtrados = todosLosArchivos;
@@ -2613,7 +2743,6 @@ function mostrarArchivosFiltrados() {
             const arch = todosLosArchivos.find(a => a.id === id);
             if (!arch) return;
 
-            // 🔥 ARREGLO 3: confirmación fuerte para borrar
             const confirmacion = prompt(
                 `⚠️ Para BORRAR PERMANENTEMENTE "${arch.nombre}", escribe exactamente:\n\nBORRAR ${arch.nombre}`
             );
@@ -2623,7 +2752,6 @@ function mostrarArchivosFiltrados() {
             }
 
             try {
-                // 🔥 ARREGLO 4: log de auditoría antes de borrar
                 try {
                     await addDoc(logsCollection, {
                         accion: 'borrado',
@@ -2667,7 +2795,6 @@ async function cargarArchivos() {
         mostrarArchivosFiltrados();
         actualizarFiltroUI();
 
-        // Diagnóstico en consola
         const stats = {
             total: todosLosArchivos.length,
             gratis: todosLosArchivos.filter(a => a.tipo === 'gratis').length,
@@ -2773,14 +2900,6 @@ window.addEventListener('click', (e) => {
     const modalCompra = document.getElementById("premiumBuyModal");
     if (e.target === modalCompra) cerrarModalCompra();
 });
-
-/* =========================================================
-   INIT
-========================================================= */
-inicializarSidebar();
-inicializarModo();
-window.cargarArchivos = cargarArchivos;
-cargarArchivos();
 </script>
 </body>
 </html>
